@@ -1,2 +1,2 @@
 # Sonic Character: Rebooted
-A file host for the Sonic Character: Rebooted mod for sm64ex-coop.
+This page serves as a file host for the mod. More details will be added later on.
