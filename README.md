@@ -1,2 +1,2 @@
-# 1stproject
-This is my firstproject
+# Sonic Character: Rebooted
+A file host for the Sonic Character: Rebooted mod for sm64ex-coop.
