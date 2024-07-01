@@ -1,7 +1,7 @@
 
 --Define what triggers the custom voice
 local function use_custom_voice(m)
-    return gPlayerSyncTable[m.playerIndex].modelId == E_MODEL_SONIC --Put your condition here!
+    return current_sonic_char(m) == 1 or current_sonic_char(m) == 2 --Put your condition here!
 end
 
 --How many snores the sleep-talk has, or rather, how long the sleep-talk lasts
@@ -12,7 +12,7 @@ local SLEEP_TALK_SNORES = 8
 --If an action has more than one voice clip, put those clips inside a table
 --CHAR_SOUND_SNORING3 requires two or three voice clips to work properly...
 --but you can omit it if your character does not sleep-talk
-local CUSTOM_VOICETABLE = {
+local SONIC_VOICETABLE = {
     [CHAR_SOUND_ATTACKED] = {'sonic-ow.mp3', 'sonic-uuurgh.mp3'},
     [CHAR_SOUND_COUGHING1] = 'sonic-cough.mp3',
     [CHAR_SOUND_COUGHING2] = 'sonic-cough-2.mp3',
@@ -46,7 +46,7 @@ local CUSTOM_VOICETABLE = {
     [CHAR_SOUND_SNORING2] = 'sonic-snore-2.mp3',
     [CHAR_SOUND_SNORING3] = {'sonic-snore-3.mp3', 'sonic-snore-2.mp3'},
     [CHAR_SOUND_SO_LONGA_BOWSER] = 'sonic-so-long-sucker.mp3',
-    --[CHAR_SOUND_TWIRL_BOUNCE] = 'BM-Yeah.mp3',
+    [CHAR_SOUND_TWIRL_BOUNCE] = 'sonic-woohoo.mp3',
     [CHAR_SOUND_UH] = 'sonic-oof-low-energy.mp3',
     [CHAR_SOUND_UH2] = 'sonic-oof-low-energy.mp3',
     [CHAR_SOUND_UH2_2] = 'sonic-oof-low-energy.mp3',
@@ -57,6 +57,53 @@ local CUSTOM_VOICETABLE = {
     [CHAR_SOUND_YAHOO_WAHA_YIPPEE] = {'sonic-woohoo.mp3', 'sonic-aw-yeah.mp3'},
     [CHAR_SOUND_YAH_WAH_HOO] = {'sonic-hup.mp3', 'sonic-wuh.mp3', 'sonic-hah.mp3'},
     [CHAR_SOUND_YAWNING] = 'sonic-yawn.mp3',
+}
+
+local AMY_VOICETABLE = {
+    [CHAR_SOUND_ATTACKED] = {'amy-oof.mp3', 'amy-uagh.mp3'},
+    [CHAR_SOUND_COUGHING1] = 'amy-cough.mp3',
+    [CHAR_SOUND_COUGHING2] = 'amy-cough-2.mp3',
+    [CHAR_SOUND_COUGHING3] = 'amy-cough-2.mp3',
+    [CHAR_SOUND_DOH] = 'amy-drats.mp3',
+    [CHAR_SOUND_DROWNING] = 'amy-drown.mp3',
+    --[CHAR_SOUND_DYING] = 'sonic-dying.mp3',
+    [CHAR_SOUND_EEUH] = 'amy-pick-up.mp3',
+    --[CHAR_SOUND_GAME_OVER] = 'Game_Over.ogg',
+    [CHAR_SOUND_GROUND_POUND_WAH] = 'amy-hah.mp3',
+    [CHAR_SOUND_HAHA] = {'amy-haha.mp3'},
+    [CHAR_SOUND_HAHA_2] = {'amy-haha.mp3'},
+    [CHAR_SOUND_HELLO] = 'amy-hi-there.mp3',
+    [CHAR_SOUND_HERE_WE_GO] = 'amy-here-we-go.mp3',
+    [CHAR_SOUND_HOOHOO] = 'amy-yah.mp3',
+    [CHAR_SOUND_HRMM] = 'amy-pick-up.mp3',
+    [CHAR_SOUND_IMA_TIRED] = 'amy-im-tired.mp3',
+    [CHAR_SOUND_LETS_A_GO] = 'amy-lets-go.mp3',
+    [CHAR_SOUND_MAMA_MIA] = 'amy-oh-no.mp3',
+    --[CHAR_SOUND_OKEY_DOKEY] = 'Okie_Dokie.ogg',
+    [CHAR_SOUND_ON_FIRE] = 'amy-ow-ow-ow.mp3',
+    [CHAR_SOUND_OOOF] = 'amy-uagh.mp3',
+    [CHAR_SOUND_OOOF2] = 'amy-uagh.mp3',
+    [CHAR_SOUND_PANTING] = {'amy-huff.mp3', 'amy-huff-2.mp3'},
+    --[CHAR_SOUND_PANTING_COLD] = 'Panting_Low_Energy.ogg',
+    --[CHAR_SOUND_PRESS_START_TO_PLAY] = 'Press_Start_to_Play.ogg',
+    [CHAR_SOUND_PUNCH_HOO] = 'amy-wah.mp3',
+    [CHAR_SOUND_PUNCH_WAH] = 'amy-wah.mp3',
+    [CHAR_SOUND_PUNCH_YAH] = 'amy-yah.mp3',
+    --[CHAR_SOUND_SNORING1] = 'sonic-snore.mp3',
+    --[CHAR_SOUND_SNORING2] = 'sonic-snore-2.mp3',
+    --[CHAR_SOUND_SNORING3] = {'sonic-snore-3.mp3', 'sonic-snore-2.mp3'},
+    [CHAR_SOUND_SO_LONGA_BOWSER] = 'amy-seeyalater.mp3',
+    [CHAR_SOUND_TWIRL_BOUNCE] = 'amy-boing.mp3',
+    [CHAR_SOUND_UH] = 'amy-ungh.mp3',
+    [CHAR_SOUND_UH2] = 'amy-ungh.mp3',
+    [CHAR_SOUND_UH2_2] = 'amy-ungh.mp3',
+    --[CHAR_SOUND_WAAAOOOW] = 'sonic-scream.mp3',
+    [CHAR_SOUND_WAH2] = 'amy-wah.mp3',
+    [CHAR_SOUND_WHOA] = 'amy-woah.mp3',
+    [CHAR_SOUND_YAHOO] = 'amy-yipee.mp3',
+    [CHAR_SOUND_YAHOO_WAHA_YIPPEE] = {'amy-yipee.mp3', 'amy-woohoo.mp3', 'amy-woo.mp3'},
+    [CHAR_SOUND_YAH_WAH_HOO] = {'amy-yah.mp3'},
+    [CHAR_SOUND_YAWNING] = 'amy-yawn.mp3',
 }
 
 --Define the table of samples that will be used for each player
@@ -131,7 +178,14 @@ local function custom_character_sound(m, characterSound)
     if characterSound == CHAR_SOUND_SNORING3 then return 0 end
     if characterSound == CHAR_SOUND_HAHA and m.hurtCounter > 0 then return 0 end
 
-    local voice = CUSTOM_VOICETABLE[characterSound]
+    local voice = SONIC_VOICETABLE[characterSound]
+	
+	if current_sonic_char(m) == 1 then
+		voice = SONIC_VOICETABLE[characterSound]
+	elseif current_sonic_char(m) == 2 then
+		voice = AMY_VOICETABLE[characterSound]
+	end
+
     if voice ~= nil then
         return play_custom_character_sound(m, voice)
     end
@@ -141,7 +195,7 @@ hook_event(HOOK_CHARACTER_SOUND, custom_character_sound)
 
 --Snoring logic for CHAR_SOUND_SNORING3 since we have to loop it manually
 --This code won't activate on the Japanese version, due to MARIO_MARIO_SOUND_PLAYED not being set
-local SNORE3_TABLE = CUSTOM_VOICETABLE[CHAR_SOUND_SNORING3]
+local SNORE3_TABLE = nil
 local STARTING_SNORE = 46
 local SLEEP_TALK_START = STARTING_SNORE + 49
 local SLEEP_TALK_END = SLEEP_TALK_START + SLEEP_TALK_SNORES
@@ -150,6 +204,13 @@ local SLEEP_TALK_END = SLEEP_TALK_START + SLEEP_TALK_SNORES
 --- @param m MarioState
 local function custom_character_snore(m)
     if not use_custom_voice(m) then return end
+	
+	
+	if current_sonic_char(m) == 1 then
+		SNORE3_TABLE = SONIC_VOICETABLE[CHAR_SOUND_SNORING3]
+	elseif current_sonic_char(m) == 2 then
+		SNORE3_TABLE = AMY_VOICETABLE[CHAR_SOUND_SNORING3]
+	end
 
     --Stop the snoring!
     if m.action ~= ACT_SLEEPING then
@@ -206,4 +267,12 @@ local function custom_character_snore(m)
         play_character_sound(m, CHAR_SOUND_SNORING1)
     end
 end
+
+-- Stop character sounds on warp.
+function on_sync_valid()
+    local m = gMarioStates[0]
+    stop_custom_character_sound(m)
+end
+
 hook_event(HOOK_MARIO_UPDATE, custom_character_snore)
+hook_event(HOOK_ON_SYNC_VALID, on_sync_valid)
