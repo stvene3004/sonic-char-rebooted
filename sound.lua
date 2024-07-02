@@ -126,7 +126,7 @@ function stop_custom_character_sound(m, sound)
     if voice_sample.file.relativePath:match('^.+/(.+)$') == sound then
         return voice_sample
     end
-    audio_sample_destroy(voice_sample)
+    -- audio_sample_destroy(voice_sample)
 end
 
 --Play a custom character's sound
