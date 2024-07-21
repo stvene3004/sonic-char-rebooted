@@ -248,11 +248,11 @@ function act_sonic_roll(m)
         else
             mario_set_forward_vel(m, approach_f32(m.forwardVel, 0, 1, 1))
         end
-		
-		if m.forwardVel < 0 then
-			m.faceAngle.y = atan2s(m.vel.z, m.vel.x)
-		    mario_set_forward_vel(m, math.abs(m.forwardVel))
-		end
+        
+        if m.forwardVel < 0 then
+            m.faceAngle.y = atan2s(m.vel.z, m.vel.x)
+            mario_set_forward_vel(m, math.abs(m.forwardVel))
+        end
 
         m.faceAngle.y = m.intendedYaw - approach_s32(convert_s16(m.intendedYaw - m.faceAngle.y), 0, 0x1000, 0x1000)
     elseif stepResult == GROUND_STEP_HIT_WALL then
@@ -774,8 +774,8 @@ function act_sonic_lying_down(m)
         --    end
         --end
     elseif m.actionState == 1 then
-        stop_custom_character_sound(m, CHAR_SOUND_SNORING1)
-        stop_custom_character_sound(m, CHAR_SOUND_SNORING2)
+        --stop_custom_character_sound(m, CHAR_SOUND_SNORING1)
+        --stop_custom_character_sound(m, CHAR_SOUND_SNORING2)
 
         set_mario_animation(m, MARIO_ANIM_WAKE_FROM_LYING)
         smlua_anim_util_set_animation(m.marioObj, "SONIC_IMPATIENT2_END")        
@@ -1053,11 +1053,11 @@ function sonic_update(m)
     end
 
     if e.modelState == 2 then
-	    if (m.flags & MARIO_METAL_CAP) == 0 then
+        if (m.flags & MARIO_METAL_CAP) == 0 then
             m.marioBodyState.capState = 1
-		else
+        else
             m.marioBodyState.capState = 3
-		end
+        end
     end
 
     if m.action == ACT_SOFT_BONK and (m.controller.buttonPressed & Z_TRIG) ~= 0 and m.prevAction ~= ACT_HOLDING_POLE then
@@ -1073,11 +1073,38 @@ function sonic_update(m)
             set_mario_action(m, ACT_SPINDASH, 0)
         end
     end
+        
+    local waterActions = {
+        [ACT_WATER_PLUNGE] = true,
+        [ACT_WATER_IDLE] = true,
+        [ACT_FLUTTER_KICK] = true,
+        [ACT_SWIMMING_END] = true,
+        [ACT_WATER_ACTION_END] = true,
+        [ACT_HOLD_WATER_IDLE] = true,
+        [ACT_HOLD_WATER_JUMP] = true,
+        [ACT_HOLD_WATER_ACTION_END] = true,
+        [ACT_BREASTSTROKE] = true
+    }
+
+    if waterActions[m.action] then
+        if m.vel.y <= -25 then
+            set_mario_particle_flags(m, PARTICLE_WATER_SPLASH, false)
+        end
+        return set_mario_action(m, ACT_SONIC_WATER_FALLING, 0)
+    end
+
+    if m.action == ACT_SONIC_WATER_FALLING and (m.controller.buttonDown & Z_TRIG) ~= 0 then
+        m.vel.y = -50.0
+        set_mario_particle_flags(m, PARTICLE_PLUNGE_BUBBLE, false)
+        m.marioObj.header.gfx.scale.y = 1.5
+        m.marioObj.header.gfx.scale.z = 0.7
+        m.marioObj.header.gfx.scale.x = 0.7
+        return set_mario_action(m, ACT_SONIC_WATER_FALLING, 2)
+    end
     
     visual_updates(m)
     return 0
 end
-
 
 hook_mario_action(ACT_SPINDASH, act_spindash)
 hook_mario_action(ACT_SONIC_ROLL, act_sonic_roll, INT_FAST_ATTACK_OR_SHELL)

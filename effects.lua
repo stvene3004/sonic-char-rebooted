@@ -62,12 +62,12 @@ function bhv_piko_loop(obj)
     end
 
     if m.action == ACT_AMY_HAMMER_ATTACK_AIR and (m.actionArg == 1 or m.actionArg == 0 or (m.actionArg == 2 and e.animFrame < 6))
-	or m.action == ACT_AMY_HAMMER_ATTACK 
-	or m.action == ACT_AMY_HAMMER_HIT 
-	or m.action == ACT_AMY_HAMMER_SPIN
-	or m.action == ACT_AMY_HAMMER_SPIN_AIR
-	or m.action == ACT_AMY_HAMMER_POUND
-	or m.action == ACT_AMY_HAMMER_POUND_LAND then
+    or m.action == ACT_AMY_HAMMER_ATTACK 
+    or m.action == ACT_AMY_HAMMER_HIT 
+    or m.action == ACT_AMY_HAMMER_SPIN
+    or m.action == ACT_AMY_HAMMER_SPIN_AIR
+    or m.action == ACT_AMY_HAMMER_POUND
+    or m.action == ACT_AMY_HAMMER_POUND_LAND then
         cur_obj_unhide()
     else
         cur_obj_hide()
@@ -77,32 +77,32 @@ end
 function spindust_init(o)
     o.oFlags =  (OBJ_FLAG_SET_FACE_YAW_TO_MOVE_YAW | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)
     o.oAnimState = 1
-	o.oScale = 1
-	cur_obj_scale(o.oScale)
+    o.oScale = 1
+    cur_obj_scale(o.oScale)
     o.oFriction = 10.0
-	o.oVelY = 0
+    o.oVelY = 0
 end
 
 function spindust_loop(o)
-	obj_set_billboard(o)
-	cur_obj_update_floor_and_walls()
+    obj_set_billboard(o)
+    cur_obj_update_floor_and_walls()
     cur_obj_move_standard(-78)
 
     if o.oScale > 7 then
-	    obj_mark_for_deletion(o)
-	end
-	cur_obj_scale(o.oScale)
-	o.oTimer = o.oTimer + 1
-	o.oAnimState = math.floor(o.oScale)
-	o.oForwardVel = -20
-	o.oScale = o.oScale + 0.2
+        obj_mark_for_deletion(o)
+    end
+    cur_obj_scale(o.oScale)
+    o.oTimer = o.oTimer + 1
+    o.oAnimState = math.floor(o.oScale)
+    o.oForwardVel = -20
+    o.oScale = o.oScale + 0.2
 end
 
 function rosy_heart_init(o)
     o.oFlags =  (OBJ_FLAG_SET_FACE_YAW_TO_MOVE_YAW | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)
-	cur_obj_scale(1)
+    cur_obj_scale(1)
     o.activeFlags = o.activeFlags | ACTIVE_FLAG_UNK9
-	o.oAnimState = 0
+    o.oAnimState = 0
     o.hitboxDownOffset        = 20
     o.oDamageOrCoinValue = 0
     o.oHealth            = 0
@@ -115,21 +115,21 @@ function rosy_heart_loop(o)
     local vel = math.random(-15, 15)
     if o.oLifetime == 0 then o.oLifetime = 30 end
     if o.oAnimState > 7 then
-	    o.oAnimState = 0
-	end
-	if o.oTimer > o.oLifetime and o.oAnimState == 1 then
+        o.oAnimState = 0
+    end
+    if o.oTimer > o.oLifetime and o.oAnimState == 1 then
         obj_mark_for_deletion(o)
-	end
-	if (o.oTimer) % 5 == 0 then
-	    vel = math.random(-15, 15)
-	    
-	end
-	
-	object_step()
-	o.oForwardVel = approach_f32(o.oForwardVel, vel, 3, 3)
-	o.oVelY = 10
-	o.oAnimState = o.oAnimState + 1
-	o.oTimer = o.oTimer + 1
+    end
+    if (o.oTimer) % 5 == 0 then
+        vel = math.random(-15, 15)
+        
+    end
+    
+    object_step()
+    o.oForwardVel = approach_f32(o.oForwardVel, vel, 3, 3)
+    o.oVelY = 10
+    o.oAnimState = o.oAnimState + 1
+    o.oTimer = o.oTimer + 1
 end
 
 id_bhvRosyHeart = hook_behavior(nil, OBJ_LIST_DEFAULT, true, rosy_heart_init, rosy_heart_loop)
@@ -169,29 +169,29 @@ function bhv_piko_piko_hammer_render(obj)
     local animFrame = m.marioObj.header.gfx.animInfo.animFrame
 
     if m.action == ACT_AMY_HAMMER_ATTACK_AIR then
-	    if m.actionArg == 1 then
+        if m.actionArg == 1 then
             obj.oFaceAnglePitch = e.rotAngle + 0x9000
             obj.oFaceAngleRoll = 0
-		elseif m.actionArg == 0 then
-		    local pitch = 0x000
-		    if e.animFrame == 0 then
+        elseif m.actionArg == 0 then
+            local pitch = 0x000
+            if e.animFrame == 0 then
                 pitch = 0x4500
-			elseif e.animFrame == 0 then
+            elseif e.animFrame == 0 then
                 pitch = -0x3500
-			else
+            else
                 pitch = -0x5000
-			end
-			
-			obj.oFaceAnglePitch = approach_s32(obj.oFaceAnglePitch, pitch, 0x2800, 0x2800)
-		end
+            end
+            
+            obj.oFaceAnglePitch = approach_s32(obj.oFaceAnglePitch, pitch, 0x2800, 0x2800)
+        end
     elseif m.action == ACT_AMY_HAMMER_ATTACK then
         local scalar = dot_along_angle(obj, m, 0) * 1.5
         if scalar > 0.723 then scalar = 0.723 end
         obj.oFaceAnglePitch = 0x5000 * scalar + 0x500
         obj.oFaceAngleRoll = 0x1000 * dot_along_angle(obj, m, -0x8000)
-		e.rotAngle = obj.oFaceAnglePitch
+        e.rotAngle = obj.oFaceAnglePitch
     elseif m.action == ACT_AMY_HAMMER_POUND or m.action == ACT_AMY_HAMMER_POUND_LAND 
-	or (m.action == ACT_AMY_HAMMER_HIT and m.actionArg == 1) then
+    or (m.action == ACT_AMY_HAMMER_HIT and m.actionArg == 1) then
         obj.oFaceAnglePitch = 0x4000
     elseif m.action == ACT_AMY_HAMMER_SPIN or m.action == ACT_AMY_HAMMER_SPIN_AIR then
         obj.oFaceAnglePitch = 0x4000

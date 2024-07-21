@@ -331,10 +331,10 @@ function act_amy_idle(m)
         elseif m.actionState == 3 then
             set_mario_animation(m, MARIO_ANIM_START_SLEEP_YAWN)
             smlua_anim_util_set_animation(m.marioObj, "AMY_WAIT_KICK")
-			
+            
             if is_anim_at_end(m) ~= 0 then
                 m.actionState = 2
-				m.actionTimer = 0
+                m.actionTimer = 0
             end
         elseif m.actionState == 4 then
             set_mario_animation(m, MARIO_ANIM_START_SLEEP_SITTING)
@@ -372,8 +372,8 @@ function act_amy_sitting_down(m)
     if m.actionState == 0 then
         set_mario_animation(m, MARIO_ANIM_IDLE_HEAD_LEFT)
         smlua_anim_util_set_animation(m.marioObj, "AMY_WAIT_2")
-		set_anim_to_frame(m, 40)
-		
+        set_anim_to_frame(m, 40)
+        
         --if is_anim_past_frame(m, 20) ~= 0 then
         --    if m.actionTimer > math.random(40, 50) * 30 then
         --        e.animFrame = 8
@@ -514,7 +514,7 @@ function act_amy_swimming(m)
     lua_update_swimming_pitch(m)
     update_amy_swimming_speed(m, e.movingSpeed)
     lua_update_water_pitch(m)
-	move_with_current(m)
+    move_with_current(m)
 
     m.actionState = 0
     local stepResult = perform_water_step(m)
@@ -761,7 +761,7 @@ function act_amy_hammer_jump(m)
     if m.actionTimer == 0 then
         play_character_sound_if_no_flag(m, CHAR_SOUND_YAHOO_WAHA_YIPPEE, MARIO_ACTION_SOUND_PLAYED)
     end
-	
+    
     if m.actionTimer < 10 and m.vel.y > 20 then
         set_mario_particle_flags(m, PARTICLE_DUST, false)
     end
@@ -1223,7 +1223,7 @@ function act_amy_crouch_slide(m)
     if (m.input & INPUT_FIRST_PERSON) ~= 0 then
         return set_mario_action(m, ACT_BRAKING, 0)
     end
-	
+    
     m.actionTimer = m.actionTimer + 1
 
     cancel = common_slide_action_with_jump(m, ACT_CROUCHING, ACT_GIANT_STEPS, ACT_FREEFALL, MARIO_ANIM_START_CROUCHING)
@@ -1292,7 +1292,7 @@ function amy_update(m)
     and (m.controller.buttonDown & A_BUTTON) ~= 0 then
         m.action = ACT_AMY_SWIMMING
     end
-	
+    
     --if m.marioObj.header.gfx.animInfo.animID == 79 then
     --    m.marioObj.header.gfx.disableAutomaticShadowPos = true
     --end
@@ -1387,9 +1387,9 @@ function amy_update(m)
         m.marioBodyState.handState = MARIO_HAND_OPEN
         smlua_anim_util_set_animation(m.marioObj, "AMY_EXIT_LEVEL")
         m.marioBodyState.capState = 0
-		
+        
         if m.marioObj.header.gfx.animInfo.animFrame > 5 then
-		    if m.marioObj.header.gfx.animInfo.animFrame < 16 then
+            if m.marioObj.header.gfx.animInfo.animFrame < 16 then
                 m.marioBodyState.eyeState = 11
             elseif m.marioObj.header.gfx.animInfo.animFrame < 40 then
                 m.marioBodyState.eyeState = 15
@@ -1397,10 +1397,10 @@ function amy_update(m)
                 m.marioBodyState.eyeState = 11
             elseif m.marioObj.header.gfx.animInfo.animFrame < 80 then
                 m.marioBodyState.eyeState = 15
-			end
+            end
         else
             m.marioBodyState.eyeState = 0
-		end
+        end
     end
 
     if m.marioObj.header.gfx.animInfo.animID == MARIO_ANIM_DROWNING_PART1 then
@@ -1498,7 +1498,7 @@ function amy_on_set_action(m)
     or m.action == ACT_HOLD_FLUTTER_KICK then
         m.action = ACT_AMY_SWIMMING
     end
-	
+    
 
     if m.action == ACT_GIANT_STEPS then
         e.animFrame = 0
@@ -1506,7 +1506,7 @@ function amy_on_set_action(m)
         m.vel.y = 20
         if m.forwardVel < 100 then mario_set_forward_vel(m, m.forwardVel + 35) end
     end
-	
+    
     --if (m.action == ACT_PUNCHING and m.actionArg == 9) or m.action == ACT_SLIDE_KICK then
 
     local jumpActions = {

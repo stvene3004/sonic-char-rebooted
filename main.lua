@@ -1,6 +1,6 @@
 -- name: Sonic Character: \\#4084d9\\Rebooted\\#ffffff\\ \\#fd90a7\\v1.2\\#ffffff\\
 -- incompatible:
--- description: The Sonic character mod remade with a couple of improvement in controls, as well as new characters.\n\ \n\Credits:\n\Coding and modelling: \\#acfffc\\steven.\\#ffffff\\\n\Ball model: \\#5454a7\\king the memer\\#ffffff\\\n\Sonic VA: \\#ff5c26\\Yuyake Kasarion\\#ffffff\\\n\Voice system: \\#ff6b91\\SMS Alfredo \\#ffffff\\\n\Coolest playtesters: \\#016786\\Asra\\#ffffff\\, \\#99fe02\\MlopsFunny\\#ffffff\\, \\#6a9ac3\\Cooliokid 956\\#ffffff\\, \\#171b73\\Demnyx\\#4b1c75\\Onyxfur\\#ffffff\\, \\#9856ac\\Zerks\\#ffffff\\.
+-- description: The Sonic character mod remade with a couple of improvement in controls, as well as new characters.\n\ \n\Credits:\n\Coding and modelling: \\#acfffc\\steven.\\#ffffff\\\n\Ball model: \\#5454a7\\king the memer\\#ffffff\\\n\Sonic VA: \\#ff5c26\\Yuyake Kasarion\\#ffffff\\\n\Amy VA: Grimoria Webb\\#ffffff\\\n\Voice system: \\#ff6b91\\SMS Alfredo \\#ffffff\\\n\Coolest playtesters: \\#016786\\Asra\\#ffffff\\, \\#99fe02\\MlopsFunny\\#ffffff\\, \\#6a9ac3\\Cooliokid 956\\#ffffff\\, \\#171b73\\Demnyx\\#4b1c75\\Onyxfur\\#ffffff\\, \\#9856ac\\Zerks\\#ffffff\\.
 
 E_MODEL_SONIC = smlua_model_util_get_id("sonic_geo")
 E_MODEL_AMY_ROSE = smlua_model_util_get_id("amy_rose_geo")
@@ -12,6 +12,9 @@ SOUND_SONIC_SPIN = audio_sample_load("SA1-Spin.mp3")
 SOUND_SONIC_DASH = audio_sample_load("SA1-Dash.mp3")
 SOUND_SONIC_RING = audio_sample_load("SA1-Ring.mp3")
 SOUND_AMY_PIKO = audio_sample_load("Piko.mp3")
+
+TEX_HUD_SONIC = get_texture_info("sonic-hud")
+TEX_HUD_AMY = get_texture_info("amy-hud")
 
 ACT_SONIC_AIR_HIT_WALL = allocate_mario_action(ACT_GROUP_AIRBORNE | ACT_FLAG_AIR)
 
@@ -50,28 +53,187 @@ end
 
 sonicchars = 0
 
+function sonic_command(msg)
+    local m = gMarioStates[0]
+    if msg == "on" then
+        if sonicchars == 0 then
+            audio_sample_play(SOUND_SONIC_RING, m.marioObj.header.gfx.cameraToObject, 1)
+            djui_popup_create("\\#4084d9\\Sonic Character\\#ffffff\\ is \\#00C7FF\\on\\#ffffff\\! \nRefer to '/sonic help' for more info.", 1)
+            sonicchars = 1
+        end
+
+        return true
+    elseif msg == "off" then
+        if sonicchars == 1 then
+            play_sound(SOUND_GENERAL_COIN, m.marioObj.header.gfx.cameraToObject)
+            djui_popup_create("\\#4084d9\\Sonic Character\\#ffffff\\ is \\#A02200\\off\\#ffffff\\!", 1)
+            sonicchars = 0
+        end
+
+        return true
+    elseif msg == "" then
+        if sonicchars == 0 then
+            audio_sample_play(SOUND_SONIC_RING, m.marioObj.header.gfx.cameraToObject, 1)
+            djui_popup_create("\\#4084d9\\Sonic Character\\#ffffff\\ is \\#00C7FF\\on\\#ffffff\\! \nRefer to '/sonic help' for more info.", 1)
+            sonicchars = 1
+        elseif sonicchars == 1 then
+            play_sound(SOUND_GENERAL_COIN, m.marioObj.header.gfx.cameraToObject)
+            djui_popup_create("\\#4084d9\\Sonic Character\\#ffffff\\ is \\#A02200\\off\\#ffffff\\!", 1)
+            sonicchars = 0
+        end
+
+        return true
+    elseif msg == "help" then
+        audio_sample_play(SOUND_SONIC_RING, m.marioObj.header.gfx.cameraToObject, 1)
+        djui_popup_create("Switch to \\#ff0000\\Mario\\#ffffff\\ to play as \\#4084d9\\Sonic\\#ffffff\\. \n\nSwitch to \\#ff0000\\Toad\\#ffffff\\ to play as \\#fd90a7\\Amy Rose\\#ffffff\\.", 3)
+
+        return true
+    end
+
+    return false
+end
+
+local charSelectSonic = 0
+local charSelectAmy = 0
+
+if _G.charSelectExists then
+
+    charSelectSonic = _G.charSelect.character_add(
+        "Sonic [SCR]",
+        {
+            "The famed Blue Blur is",
+            "here and ready to",
+            "blast through levels",
+            "with blinding speeds.",
+            "",
+            "VA: AngelicMiracles/Yuyake"
+        },
+        "steven.",
+        {r = 64, g = 132, b = 217},
+        E_MODEL_SONIC,
+        CT_MARIO,
+        TEX_HUD_SONIC
+    )
+
+    local PALETTE_SONIC = {
+        [PANTS]  = "4084d9",
+        [SHIRT]  = "d91101",
+        [GLOVES] = "ffffff",
+        -- [SHOES]  = {r = 0x72, g = 0x1c, b = 0x0e},
+        -- [HAIR]   = {r = 0x73, g = 0x06, b = 0x00},
+        [SKIN]   = "fdc976",
+        [CAP]    = "d91101",
+    }
+
+    charSelectAmy = _G.charSelect.character_add(
+        "Amy [SCR]",
+        {
+            "The Rosy Rascal followed",
+            "her love all the way to",
+            "Mario's world and she's",
+            "brought her trusty Piko",
+            "Piko Hammer.",
+            "",
+            "VA: Grimoria Webb/Draco"
+        },
+        "steven.",
+        {r = 253, g = 144, b = 167},
+        E_MODEL_AMY_ROSE,
+        CT_MARIO,
+        TEX_HUD_AMY
+    )
+
+    local PALETTE_AMY = {
+        [PANTS]  = "00ff86",
+        [SHIRT]  = "e41515",
+        [GLOVES] = "ffffff",
+        -- [SHOES]  = {r = 0x72, g = 0x1c, b = 0x0e},
+        [HAIR]   = "fd90a7",
+        [SKIN]   = "ffb597",
+        [CAP]    = "e41515",
+    }
+
+    -- Handle Palettes via Character Select
+    _G.charSelect.character_add_palette_preset(E_MODEL_SONIC, PALETTE_SONIC)
+    _G.charSelect.character_add_palette_preset(E_MODEL_SPINBALL, PALETTE_SONIC)
+    _G.charSelect.character_add_palette_preset(E_MODEL_AMY_ROSE, PALETTE_AMY)
+    _G.charSelect.character_add_palette_preset(E_MODEL_AMY_ROSE_WINTER, PALETTE_AMY)
+
+    -- Handle Voicelines via Character Select
+    _G.charSelect.character_add_voice(E_MODEL_SONIC, SONIC_VOICETABLE)
+    _G.charSelect.character_add_voice(E_MODEL_SPINBALL, SONIC_VOICETABLE)
+    _G.charSelect.character_add_voice(E_MODEL_AMY_ROSE, AMY_VOICETABLE)
+    _G.charSelect.character_add_voice(E_MODEL_AMY_ROSE_WINTER, AMY_VOICETABLE)
+
+    hook_event(
+        HOOK_CHARACTER_SOUND,
+        function(m, sound)
+            if _G.charSelect.character_get_voice(m) == SONIC_VOICETABLE then
+                return _G.charSelect.voice.sound(m, sound)
+            end
+            if _G.charSelect.character_get_voice(m) == AMY_VOICETABLE then
+                return _G.charSelect.voice.sound(m, sound)
+            end
+        end
+    )
+    hook_event(
+        HOOK_MARIO_UPDATE,
+        function(m)
+            if _G.charSelect.character_get_voice(m) == SONIC_VOICETABLE then
+                return _G.charSelect.voice.snore(m)
+            end
+            if _G.charSelect.character_get_voice(m) == AMY_VOICETABLE then
+                return _G.charSelect.voice.snore(m)
+            end
+        end
+    )
+else
+    hook_chat_command(
+    "sonic",
+    "[\\#00C7FF\\on\\#ffffff\\|\\#A02200\\off\\#ffffff\\] turn \\#4084d9\\Sonic \\#00C7FF\\on \\#ffffff\\or \\#A02200\\off",
+    sonic_command
+    )
+end
+
 -- General functions.
 function current_sonic_char(m)
-    if gPlayerSyncTable[m.playerIndex].modelId == E_MODEL_SONIC then
-        return 1
-    elseif gPlayerSyncTable[m.playerIndex].modelId == E_MODEL_AMY_ROSE 
-    or gPlayerSyncTable[m.playerIndex].modelId == E_MODEL_AMY_ROSE_WINTER then
-        return 2
+    if _G.charSelectExists then
+        if charSelectSonic == _G.charSelect.character_get_current_number() then
+            return 1
+        elseif charSelectAmy == _G.charSelect.character_get_current_number() then
+            return 2
+        else
+            return 0
+        end
     else
-        return 0
+        if gPlayerSyncTable[m.playerIndex].modelId == E_MODEL_SONIC then
+            return 1
+        elseif gPlayerSyncTable[m.playerIndex].modelId == E_MODEL_AMY_ROSE 
+        or gPlayerSyncTable[m.playerIndex].modelId == E_MODEL_AMY_ROSE_WINTER then
+            return 2
+        else
+            return 0
+        end
+
+    end
+end
+
+function update_sonic_char(m) 
+    if m.playerIndex == 0 then
+        gPlayerSyncTable[m.playerIndex].curSonicChar = current_sonic_char(m)
     end
 end
 
 function sonic_air_attacks(m)
     local e = gMarioStateExtras[m.playerIndex]
-    if current_sonic_char(m) == 1 then
+    if gPlayerSyncTable[m.playerIndex].curSonicChar == 1 then
         if (m.input & INPUT_NONZERO_ANALOG) ~= 0 and e.wallClimbed == 0 then
             m.action = ACT_DROPDASH
             audio_sample_play(SOUND_SONIC_SPIN, m.pos, 1)
         else
             set_mario_action(m, ACT_JUMP_KICK, 0)
         end
-    elseif current_sonic_char(m) == 2 then
+    elseif gPlayerSyncTable[m.playerIndex].curSonicChar == 2 then
         set_mario_action(m, ACT_AMY_HAMMER_ATTACK_AIR, 0)
     end
 end
@@ -444,6 +606,53 @@ function mario_update_local(m)
     end
 end
 
+function cs_only_model_update(m)
+    local e = gMarioStateExtras[m.playerIndex]
+    
+    if not _G.charSelectExists then return end
+    if m.playerIndex == 0 then
+        if e.modelState <= 0 then
+            _G.charSelect.character_edit(
+                charSelectSonic,
+                nil,
+                nil,
+                nil,
+                nil,
+                E_MODEL_SONIC
+            )
+        else
+            _G.charSelect.character_edit(
+                charSelectSonic,
+                nil,
+                nil,
+                nil,
+                nil,
+                E_MODEL_SPINBALL
+            )
+        end
+        if ((m.area.terrainType & TERRAIN_MASK) == TERRAIN_SNOW) then
+            _G.charSelect.character_edit(
+                charSelectAmy,
+                nil,
+                nil,
+                nil,
+                nil,
+                E_MODEL_AMY_ROSE_WINTER
+            )
+        else
+            _G.charSelect.character_edit(
+                charSelectAmy,
+                nil,
+                nil,
+                nil,
+                nil,
+                E_MODEL_AMY_ROSE
+            )
+        end
+    end
+    
+end
+
 function visual_updates(m)
     local e = gMarioStateExtras[m.playerIndex]
 
@@ -508,9 +717,9 @@ function do_sonic_jump(m)
     set_mario_y_vel_based_on_fspeed(m, e.jumpHeight, e.jumpHeightMultiplier)
     if m.heldObj == nil then
         audio_sample_play(SOUND_SONIC_JUMP, m.pos, 1)
-        if current_sonic_char(m) == 1 then
+        if gPlayerSyncTable[m.playerIndex].curSonicChar == 1 then
             return set_mario_action(m, ACT_SONIC_JUMP, 0)
-        elseif current_sonic_char(m) == 2 then
+        elseif gPlayerSyncTable[m.playerIndex].curSonicChar == 2 then
             return set_mario_action(m, ACT_AMY_JUMP, 0)
         end
     else
@@ -581,6 +790,7 @@ end
 
 local prevVelY
 local prevPosY
+
 -- Hooks.
 function mario_update(m)
     local e = gMarioStateExtras[m.playerIndex]
@@ -590,15 +800,15 @@ function mario_update(m)
     if m.playerIndex == 0 then
         mario_update_local(m)
     end
-	
+    
     if m.vel.y >= 0 then prevPosY = m.pos.y end
 
-    if current_sonic_char(m) == 1 then
+    if gPlayerSyncTable[m.playerIndex].curSonicChar == 1 then
         if m.action == ACT_IDLE then
             return set_mario_action(m, ACT_SONIC_IDLE, 0)
         end
         return sonic_update(m)
-    elseif current_sonic_char(m) == 2 then
+    elseif gPlayerSyncTable[m.playerIndex].curSonicChar == 2 then
         if m.action == ACT_IDLE then
             return set_mario_action(m, ACT_AMY_IDLE, 0)
         end
@@ -606,6 +816,20 @@ function mario_update(m)
     else
         if m.action == ACT_SONIC_IDLE or m.action == ACT_AMY_IDLE then
             return set_mario_action(m, ACT_IDLE, 0)
+        end
+    end
+
+    if gPlayerSyncTable[m.playerIndex].curSonicChar ~= 1 then
+        local waterSonicActions = {
+            [ACT_SONIC_WATER_FALLING] = true,
+            [ACT_SONIC_WATER_STANDING] = true,
+            [ACT_SONIC_WATER_WALKING] = true,
+            [ACT_SONIC_WATER_SPINDASH] = true,
+            [ACT_SONIC_WATER_ROLLING] = true
+        }
+
+        if waterSonicActions[m.action] then
+            return set_mario_action(m, ACT_WATER_IDLE, 0)
         end
     end
 
@@ -624,51 +848,11 @@ end
 
 function mario_on_set_action(m)
     local e = gMarioStateExtras[m.playerIndex]
-    if current_sonic_char(m) == 1 then
+    if gPlayerSyncTable[m.playerIndex].curSonicChar == 1 then
         return sonic_on_set_action(m)
-    elseif current_sonic_char(m) == 2 then
+    elseif gPlayerSyncTable[m.playerIndex].curSonicChar == 2 then
         return amy_on_set_action(m)
     end
-end
-
-function sonic_command(msg)
-    local m = gMarioStates[0]
-    if msg == "on" then
-        if sonicchars == 0 then
-            audio_sample_play(SOUND_SONIC_RING, m.marioObj.header.gfx.cameraToObject, 1)
-            djui_popup_create("\\#4084d9\\Sonic Character\\#ffffff\\ is \\#00C7FF\\on\\#ffffff\\! \nRefer to '/sonic help' for more info.", 1)
-            sonicchars = 1
-        end
-
-        return true
-    elseif msg == "off" then
-        if sonicchars == 1 then
-            play_sound(SOUND_GENERAL_COIN, m.marioObj.header.gfx.cameraToObject)
-            djui_popup_create("\\#4084d9\\Sonic Character\\#ffffff\\ is \\#A02200\\off\\#ffffff\\!", 1)
-            sonicchars = 0
-        end
-
-        return true
-    elseif msg == "" then
-        if sonicchars == 0 then
-            audio_sample_play(SOUND_SONIC_RING, m.marioObj.header.gfx.cameraToObject, 1)
-            djui_popup_create("\\#4084d9\\Sonic Character\\#ffffff\\ is \\#00C7FF\\on\\#ffffff\\! \nRefer to '/sonic help' for more info.", 1)
-            sonicchars = 1
-        elseif sonicchars == 1 then
-            play_sound(SOUND_GENERAL_COIN, m.marioObj.header.gfx.cameraToObject)
-            djui_popup_create("\\#4084d9\\Sonic Character\\#ffffff\\ is \\#A02200\\off\\#ffffff\\!", 1)
-            sonicchars = 0
-        end
-
-        return true
-    elseif msg == "help" then
-        audio_sample_play(SOUND_SONIC_RING, m.marioObj.header.gfx.cameraToObject, 1)
-        djui_popup_create("Switch to \\#ff0000\\Mario\\#ffffff\\ to play as \\#4084d9\\Sonic\\#ffffff\\. \n\nSwitch to \\#ff0000\\Toad\\#ffffff\\ to play as \\#fd90a7\\Amy Rose\\#ffffff\\.", 3)
-
-        return true
-    end
-
-    return false
 end
 
 function allow_interact(m, o, intType)
@@ -763,7 +947,7 @@ function on_interact(m, o, intType)
         return false
     end
 
-	if (intType & bounceTypes) ~= 0 and (o.oInteractionSubtype & INT_SUBTYPE_TWIRL_BOUNCE) == 0 and m.action == ACT_BOUND_POUND then
+    if (intType & bounceTypes) ~= 0 and (o.oInteractionSubtype & INT_SUBTYPE_TWIRL_BOUNCE) == 0 and m.action == ACT_BOUND_POUND then
         o.oInteractStatus = ATTACK_GROUND_POUND_OR_TWIRL + (INT_STATUS_INTERACTED | INT_STATUS_WAS_ATTACKED)
         return set_mario_action(m, ACT_BOUND_JUMP, 0)
     end
@@ -778,6 +962,9 @@ function set_mario_model(o)
     end
 end
 
+hook_event(HOOK_MARIO_UPDATE, update_sonic_char)
+hook_event(HOOK_MARIO_UPDATE, cs_only_model_update)
+
 hook_event(HOOK_ON_SET_MARIO_ACTION, mario_on_set_action)
 hook_event(HOOK_MARIO_UPDATE, mario_update)
 hook_event(HOOK_ALLOW_INTERACT, allow_interact)
@@ -785,9 +972,3 @@ hook_event(HOOK_ON_INTERACT, on_interact)
 hook_event(HOOK_OBJECT_SET_MODEL, set_mario_model)
 
 hook_mario_action(ACT_SONIC_AIR_HIT_WALL, act_air_hit_wall)
-
-hook_chat_command(
-"sonic",
-"[\\#00C7FF\\on\\#ffffff\\|\\#A02200\\off\\#ffffff\\] turn \\#4084d9\\Sonic \\#00C7FF\\on \\#ffffff\\or \\#A02200\\off",
-sonic_command
-)

@@ -57,61 +57,59 @@ function sonic_underwater_switch_press(m)
 end
 
 function act_sonic_water_falling(m)
-    if gPlayerSyncTable[0].modelId == E_MODEL_SONIC then
-        move_with_current(m)
-        if (m.flags & MARIO_METAL_CAP) ~= 0 then
-            m.health = m.health + 0x100
-        end
-
-        if (m.input & INPUT_NONZERO_ANALOG) ~= 0 then
-            m.faceAngle.y = m.intendedYaw - approach_s32(convert_s16(m.intendedYaw - m.faceAngle.y), 0, 0x300, 0x300)
-            mario_set_forward_vel(m, 20)
-        else
-            mario_set_forward_vel(m, 0)
-        end
-        if m.vel.y < -20 then
-            m.vel.y = m.vel.y + 5
-        end
-        if m.actionArg == 0 then
-            if m.heldObj ~= nil then
-                set_mario_animation(m, MARIO_ANIM_FALL_WITH_LIGHT_OBJ)
-            else
-                set_mario_animation(m, MARIO_ANIM_GENERAL_FALL)
-            end
-        elseif m.actionArg == 1 then
-            if m.heldObj ~= nil then
-                set_mario_animation(m, MARIO_ANIM_FALL_WITH_LIGHT_OBJ)
-            else
-                set_mario_animation(m, MARIO_ANIM_FALL_FROM_WATER)
-            end
-        else
-            if m.heldObj ~= nil then
-                set_mario_animation(m, MARIO_ANIM_JUMP_WITH_LIGHT_OBJ)
-            else
-                set_mario_animation(m, MARIO_ANIM_FORWARD_SPINNING)
-            end
-        end
-        stepResult = perform_air_step(m, 0)
-        if stepResult == AIR_STEP_LANDED then --hit floor or cancelled
-            set_mario_action(m, ACT_SONIC_WATER_STANDING, 0)
-        end
-        if (m.input & INPUT_A_PRESSED) ~= 0 and m.actionTimer >= 1 and m.heldObj == nil then
-            m.vel.y = 40
-            return set_mario_action(m, ACT_SONIC_WATER_FALLING, 2)
-        end
-
-        if (m.pos.y >= m.waterLevel - 150) then
-            set_mario_particle_flags(m, PARTICLE_IDLE_WATER_WAVE, false)
-            if (m.input & INPUT_A_PRESSED) ~= 0 then
-                set_mario_particle_flags(m, PARTICLE_WATER_SPLASH, false)
-                return set_mario_action(m, ACT_WATER_JUMP, 0)
-            end
-        end
-        m.actionTimer = m.actionTimer + 1
-        return 0
-    else
-        return set_mario_action(m, ACT_WATER_IDLE, 0)
+    move_with_current(m)
+    if (m.flags & MARIO_METAL_CAP) ~= 0 then
+        m.health = m.health + 0x100
     end
+
+    if (m.input & INPUT_NONZERO_ANALOG) ~= 0 then
+        m.faceAngle.y = m.intendedYaw - approach_s32(convert_s16(m.intendedYaw - m.faceAngle.y), 0, 0x300, 0x300)
+        mario_set_forward_vel(m, 20)
+    else
+        mario_set_forward_vel(m, 0)
+    end
+    if m.vel.y < -20 then
+        m.vel.y = m.vel.y + 5
+    end
+    if m.actionArg == 0 then
+        if m.heldObj ~= nil then
+            set_mario_animation(m, MARIO_ANIM_FALL_WITH_LIGHT_OBJ)
+        else
+            set_mario_animation(m, MARIO_ANIM_GENERAL_FALL)
+        end
+    elseif m.actionArg == 1 then
+        if m.heldObj ~= nil then
+            set_mario_animation(m, MARIO_ANIM_FALL_WITH_LIGHT_OBJ)
+        else
+            set_mario_animation(m, MARIO_ANIM_FALL_FROM_WATER)
+        end
+    else
+        if m.heldObj ~= nil then
+            set_mario_animation(m, MARIO_ANIM_JUMP_WITH_LIGHT_OBJ)
+        else
+            set_mario_animation(m, MARIO_ANIM_FORWARD_SPINNING)
+        end
+    end
+    stepResult = perform_air_step(m, 0)
+    if stepResult == AIR_STEP_LANDED then --hit floor or cancelled
+        set_mario_action(m, ACT_SONIC_WATER_STANDING, 0)
+    end
+    if (m.input & INPUT_A_PRESSED) ~= 0 and m.actionTimer >= 1 and m.heldObj == nil then
+        m.vel.y = 40
+        return set_mario_action(m, ACT_SONIC_WATER_FALLING, 2)
+    end
+
+    if (m.pos.y >= m.waterLevel - 150) then
+        set_mario_particle_flags(m, PARTICLE_IDLE_WATER_WAVE, false)
+        if (m.input & INPUT_A_PRESSED) ~= 0 then
+            m.pos.y = m.waterLevel
+            set_mario_particle_flags(m, PARTICLE_WATER_SPLASH, false)
+            if (m.playerIndex == 0) then set_camera_mode(m.area.camera, m.area.camera.defMode, 1) end
+            return do_sonic_jump(m)
+        end
+    end
+    m.actionTimer = m.actionTimer + 1
+    return 0
 end
 
 function act_sonic_water_standing(m)
@@ -335,47 +333,6 @@ function act_water_spindash(m)
     return 0
 end
 
-function mario_update(m)
-    if current_sonic_char(m) == 1 then
-        local waterActions =
-            m.action == ACT_WATER_PLUNGE or m.action == ACT_WATER_IDLE or m.action == ACT_FLUTTER_KICK or
-            m.action == ACT_SWIMMING_END or
-            m.action == ACT_WATER_ACTION_END or
-            m.action == ACT_HOLD_WATER_IDLE or
-            m.action == ACT_HOLD_WATER_JUMP or
-            m.action == ACT_HOLD_WATER_ACTION_END or
-            (m.action & ACT_FLAG_METAL_WATER) ~= 0 or
-            m.action == ACT_BREASTSTROKE
-
-        if waterActions then
-            if m.vel.y <= -25 then
-                set_mario_particle_flags(m, PARTICLE_WATER_SPLASH, false)
-            end
-            return set_mario_action(m, ACT_SONIC_WATER_FALLING, 0)
-        end
-
-        if m.action == ACT_SONIC_WATER_FALLING and (m.controller.buttonDown & Z_TRIG) ~= 0 then
-            m.vel.y = -50.0
-            set_mario_particle_flags(m, PARTICLE_PLUNGE_BUBBLE, false)
-            m.marioObj.header.gfx.scale.y = 1.5
-            m.marioObj.header.gfx.scale.z = 0.7
-            m.marioObj.header.gfx.scale.x = 0.7
-            return set_mario_action(m, ACT_SONIC_WATER_FALLING, 2)
-        end
-    else
-        local waterActions =
-            m.action == ACT_SONIC_WATER_FALLING or m.action == ACT_SONIC_WATER_STANDING or
-            m.action == ACT_SONIC_WATER_WALKING or
-            m.action == ACT_SONIC_WATER_SPINDASH or
-            m.action == ACT_SONIC_WATER_ROLLING
-
-        if waterActions then
-            return set_mario_action(m, ACT_WATER_IDLE, 0)
-        end
-    end
-end
-
-hook_event(HOOK_MARIO_UPDATE, mario_update)
 hook_mario_action(ACT_SONIC_WATER_FALLING, act_sonic_water_falling)
 hook_mario_action(ACT_SONIC_WATER_STANDING, act_sonic_water_standing)
 hook_mario_action(ACT_SONIC_WATER_WALKING, act_sonic_water_walking)
