@@ -79,125 +79,6 @@ function amy_spawn_heart_particles(m, angley, offset, anglex, vert)
     )
 end
 
-function amy_anim_and_audio_for_walk(m)
-    local val14 = 0
-    local marioObj = m.marioObj
-    local val0C = true
-    local targetPitch = 0
-    local val04 = 4.0
-
-    if val14 < 4 then
-        val14 = 4
-    end
-
-    if m.forwardVel > 2 then
-        val04 = math.abs(m.forwardVel)
-    else
-        val04 = 5
-    end
-
-    if (m.quicksandDepth > 50.0) then
-        val14 = (val04 / 4.0 * 0x10000)
-        set_mario_anim_with_accel(m, MARIO_ANIM_MOVE_IN_QUICKSAND, val14)
-        play_step_sound(m, 19, 93)
-        m.actionTimer = 0
-    else
-        if val0C == true then
-            if m.actionTimer == 0 then
-                if (val04 > 8.0) then
-                    m.actionTimer = 2
-                else
-                    --(Speed Crash) If Mario's speed is more than 2^17.
-                    if (val14 < 0x1000) then
-                        val14 = 0x1000
-                    else
-                        val14 = (val04 / 4.0 * 0x10000)
-                    end
-                    set_mario_animation(m, MARIO_ANIM_START_TIPTOE)
-                    play_step_sound(m, 7, 22)
-                    if (is_anim_past_frame(m, 23)) then
-                        m.actionTimer = 2
-                    end
-
-                    val0C = false
-                end
-            elseif m.actionTimer == 1 then
-                if (val04 > 8.0) or m.intendedMag > 8.0 then
-                    m.actionTimer = 2
-                else
-                    -- (Speed Crash) If Mario's speed is more than 2^17.
-                    if (val14 < 0x1000) then
-                        val14 = 0x1000
-                    else
-                        val14 = (val04 / 4.0 * 0x10000)
-                    end
-                    set_mario_animation(m, MARIO_ANIM_TIPTOE)
-                    play_step_sound(m, 14, 72)
-
-                    val0C = false
-                end
-            elseif m.actionTimer == 2 then
-                if (val04 < 5.0) then
-                    m.actionTimer = 1
-                elseif (val04 > 22.0) then
-                    m.actionTimer = 3
-                else
-                    -- (Speed Crash) If Mario's speed is more than 2^17.
-                    val14 = (val04 / 4.0 * 0x10000)
-                    set_mario_anim_with_accel(m, MARIO_ANIM_WALKING, val14)
-                    play_step_sound(m, 19, 57)
-
-                    val0C = false
-                end
-            elseif m.actionTimer == 3 then
-                if (val04 < 18.0) then
-                    m.actionTimer = 2
-                else
-                    -- (Speed Crash) If Mario's speed is more than 2^17.
-                    val14 = (val04 / 4.0 * 0x10000)
-                    if m.forwardVel > 38 then
-                        smlua_anim_util_set_animation(marioObj, "AMY_RUNNING")
-                        set_mario_anim_with_accel(m, MARIO_ANIM_RUNNING_UNUSED, val14)
-                    else
-                        set_mario_anim_with_accel(m, MARIO_ANIM_RUNNING, val14)
-                    end
-                    play_step_sound(m, 9, 45)
-                    targetPitch = tilt_body_running(m)
-
-                    val0C = false
-                end
-            end
-        end
-    end
-
-    marioObj.oMarioWalkingPitch =
-        convert_s16(approach_s32(marioObj.oMarioWalkingPitch, find_floor_slope(m, 0x8000), 0x800, 0x800))
-    marioObj.header.gfx.angle.x = marioObj.oMarioWalkingPitch
-end
-
--- Code nabbed from Shell Rush.
-function amy_wall_bounce(m)
-    -- figure out direction
-    local v = {
-        x = sins(m.faceAngle.y) * m.forwardVel,
-        y = 0,
-        z = coss(m.faceAngle.y) * m.forwardVel
-    }
-
-    -- projection
-    local parallel = vec3f_project(v, m.wallNormal)
-    local perpendicular = {x = v.x - parallel.x, y = v.y - parallel.y, z = v.z - parallel.z}
-
-    -- reflect velocity along normal
-    local reflect = {
-        x = perpendicular.x - parallel.x,
-        y = perpendicular.y - parallel.y,
-        z = perpendicular.z - parallel.z
-    }
-
-    m.faceAngle.y = atan2s(reflect.z, reflect.x)
-end
-
 function amy_update_sliding(m, stopSpeed)
     local lossFactor
     local tempLossFactor
@@ -331,10 +212,10 @@ function act_amy_idle(m)
         elseif m.actionState == 3 then
             set_mario_animation(m, MARIO_ANIM_START_SLEEP_YAWN)
             smlua_anim_util_set_animation(m.marioObj, "AMY_WAIT_KICK")
-            
+			
             if is_anim_at_end(m) ~= 0 then
                 m.actionState = 2
-                m.actionTimer = 0
+				m.actionTimer = 0
             end
         elseif m.actionState == 4 then
             set_mario_animation(m, MARIO_ANIM_START_SLEEP_SITTING)
@@ -372,8 +253,8 @@ function act_amy_sitting_down(m)
     if m.actionState == 0 then
         set_mario_animation(m, MARIO_ANIM_IDLE_HEAD_LEFT)
         smlua_anim_util_set_animation(m.marioObj, "AMY_WAIT_2")
-        set_anim_to_frame(m, 40)
-        
+		set_anim_to_frame(m, 40)
+		
         --if is_anim_past_frame(m, 20) ~= 0 then
         --    if m.actionTimer > math.random(40, 50) * 30 then
         --        e.animFrame = 8
@@ -443,7 +324,7 @@ function act_amy_walking(m)
             set_mario_anim_with_accel(m, MARIO_ANIM_WALK_WITH_LIGHT_OBJ, m.forwardVel * 0x4000)
             play_step_sound(m, 12, 62)
         else
-            amy_anim_and_audio_for_walk(m)
+            sonic_gen_anim_and_audio_for_walk(m, 18, 38)
         end
         if (m.intendedMag - m.forwardVel) > 16 then
             set_mario_particle_flags(m, PARTICLE_DUST, false)
@@ -514,7 +395,7 @@ function act_amy_swimming(m)
     lua_update_swimming_pitch(m)
     update_amy_swimming_speed(m, e.movingSpeed)
     lua_update_water_pitch(m)
-    move_with_current(m)
+	move_with_current(m)
 
     m.actionState = 0
     local stepResult = perform_water_step(m)
@@ -673,7 +554,7 @@ function act_amy_hammer_attack_air(m)
             play_sound(SOUND_ACTION_BOUNCE_OFF_OBJECT, m.marioObj.header.gfx.cameraToObject)
             audio_sample_play(SOUND_AMY_PIKO, m.pos, 1)
             cur_obj_shake_screen(SHAKE_POS_MEDIUM)
-            amy_wall_bounce(m)
+            wall_bounce(m)
             if m.vel.y < 140 then
                 set_mario_y_vel_based_on_fspeed(m, 40, 0.5)
             else
@@ -761,7 +642,7 @@ function act_amy_hammer_jump(m)
     if m.actionTimer == 0 then
         play_character_sound_if_no_flag(m, CHAR_SOUND_YAHOO_WAHA_YIPPEE, MARIO_ACTION_SOUND_PLAYED)
     end
-    
+	
     if m.actionTimer < 10 and m.vel.y > 20 then
         set_mario_particle_flags(m, PARTICLE_DUST, false)
     end
@@ -872,7 +753,7 @@ function act_amy_hammer_spin(m)
         play_sound(SOUND_ACTION_BOUNCE_OFF_OBJECT, m.marioObj.header.gfx.cameraToObject)
         cur_obj_shake_screen(SHAKE_POS_MEDIUM)
         audio_sample_play(SOUND_AMY_PIKO, m.pos, 1)
-        amy_wall_bounce(m)
+        wall_bounce(m)
         if m.forwardVel < 5 then
             mario_set_forward_vel(m, 5)
         else
@@ -927,7 +808,7 @@ function act_amy_hammer_spin_air(m)
         play_sound(SOUND_ACTION_BOUNCE_OFF_OBJECT, m.marioObj.header.gfx.cameraToObject)
         cur_obj_shake_screen(SHAKE_POS_MEDIUM)
         audio_sample_play(SOUND_AMY_PIKO, m.pos, 1)
-        amy_wall_bounce(m)
+        wall_bounce(m)
 
         if m.forwardVel < 5 then
             mario_set_forward_vel(m, 5)
@@ -1223,7 +1104,7 @@ function act_amy_crouch_slide(m)
     if (m.input & INPUT_FIRST_PERSON) ~= 0 then
         return set_mario_action(m, ACT_BRAKING, 0)
     end
-    
+	
     m.actionTimer = m.actionTimer + 1
 
     cancel = common_slide_action_with_jump(m, ACT_CROUCHING, ACT_GIANT_STEPS, ACT_FREEFALL, MARIO_ANIM_START_CROUCHING)
@@ -1292,7 +1173,7 @@ function amy_update(m)
     and (m.controller.buttonDown & A_BUTTON) ~= 0 then
         m.action = ACT_AMY_SWIMMING
     end
-    
+	
     --if m.marioObj.header.gfx.animInfo.animID == 79 then
     --    m.marioObj.header.gfx.disableAutomaticShadowPos = true
     --end
@@ -1328,6 +1209,10 @@ function amy_update(m)
 
     if m.marioObj.header.gfx.animInfo.animID == MARIO_ANIM_RUNNING then
         smlua_anim_util_set_animation(m.marioObj, "AMY_JOGGING")
+    end
+
+    if m.marioObj.header.gfx.animInfo.animID == MARIO_ANIM_RUNNING_UNUSED then
+        smlua_anim_util_set_animation(m.marioObj, "AMY_RUNNING")
     end
 
     if m.marioObj.header.gfx.animInfo.animID == MARIO_ANIM_SKID_ON_GROUND then
@@ -1387,9 +1272,9 @@ function amy_update(m)
         m.marioBodyState.handState = MARIO_HAND_OPEN
         smlua_anim_util_set_animation(m.marioObj, "AMY_EXIT_LEVEL")
         m.marioBodyState.capState = 0
-        
+		
         if m.marioObj.header.gfx.animInfo.animFrame > 5 then
-            if m.marioObj.header.gfx.animInfo.animFrame < 16 then
+		    if m.marioObj.header.gfx.animInfo.animFrame < 16 then
                 m.marioBodyState.eyeState = 11
             elseif m.marioObj.header.gfx.animInfo.animFrame < 40 then
                 m.marioBodyState.eyeState = 15
@@ -1397,10 +1282,10 @@ function amy_update(m)
                 m.marioBodyState.eyeState = 11
             elseif m.marioObj.header.gfx.animInfo.animFrame < 80 then
                 m.marioBodyState.eyeState = 15
-            end
+			end
         else
             m.marioBodyState.eyeState = 0
-        end
+		end
     end
 
     if m.marioObj.header.gfx.animInfo.animID == MARIO_ANIM_DROWNING_PART1 then
@@ -1498,7 +1383,7 @@ function amy_on_set_action(m)
     or m.action == ACT_HOLD_FLUTTER_KICK then
         m.action = ACT_AMY_SWIMMING
     end
-    
+	
 
     if m.action == ACT_GIANT_STEPS then
         e.animFrame = 0
@@ -1506,7 +1391,7 @@ function amy_on_set_action(m)
         m.vel.y = 20
         if m.forwardVel < 100 then mario_set_forward_vel(m, m.forwardVel + 35) end
     end
-    
+	
     --if (m.action == ACT_PUNCHING and m.actionArg == 9) or m.action == ACT_SLIDE_KICK then
 
     local jumpActions = {

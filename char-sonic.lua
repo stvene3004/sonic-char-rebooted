@@ -22,6 +22,8 @@ ACT_SONIC_FREEFALL =
 allocate_mario_action(ACT_GROUP_AIRBORNE | ACT_FLAG_MOVING | ACT_FLAG_AIR | ACT_FLAG_ALLOW_VERTICAL_WIND_ACTION)
 ACT_SONIC_EAGLE =
 allocate_mario_action(ACT_GROUP_AIRBORNE | ACT_FLAG_AIR | ACT_FLAG_ATTACKING | ACT_FLAG_ALLOW_VERTICAL_WIND_ACTION)
+ACT_SONIC_WINDMILL_KICK =
+allocate_mario_action(ACT_GROUP_AIRBORNE | ACT_FLAG_AIR | ACT_FLAG_ATTACKING | ACT_FLAG_ALLOW_VERTICAL_WIND_ACTION)
 ACT_DROPDASH =
 allocate_mario_action(ACT_GROUP_AIRBORNE | ACT_FLAG_AIR | ACT_FLAG_ATTACKING | ACT_FLAG_ALLOW_VERTICAL_WIND_ACTION | ACT_FLAG_SHORT_HITBOX)
 ACT_AIRDASH = allocate_mario_action(ACT_GROUP_AIRBORNE | ACT_FLAG_AIR | ACT_FLAG_ATTACKING | ACT_FLAG_SHORT_HITBOX)
@@ -33,103 +35,6 @@ ACT_BOUND_POUND =
 allocate_mario_action(ACT_GROUP_AIRBORNE | ACT_FLAG_AIR | ACT_FLAG_ATTACKING | ACT_FLAG_ALLOW_VERTICAL_WIND_ACTION)
 ACT_BOUND_POUND_LAND =
 allocate_mario_action(ACT_GROUP_MOVING | ACT_FLAG_MOVING | ACT_FLAG_ATTACKING)
-
--- Misc functions.
-
-function sonic_anim_and_audio_for_walk(m)
-    local val14 = 0
-    local marioObj = m.marioObj
-    local val0C = true
-    local targetPitch = 0
-    local val04 = 4.0
-
-    if val14 < 4 then
-        val14 = 4
-    end
-
-    if m.forwardVel > 2 then
-        val04 = math.abs(m.forwardVel)
-    else
-        val04 = 5
-    end
-
-    if (m.quicksandDepth > 50.0) then
-        val14 = (val04 / 4.0 * 0x10000)
-        set_mario_anim_with_accel(m, MARIO_ANIM_MOVE_IN_QUICKSAND, val14)
-        play_step_sound(m, 19, 93)
-        m.actionTimer = 0
-    else
-        if val0C == true then
-            if m.actionTimer == 0 then
-                if (val04 > 8.0) then
-                    m.actionTimer = 2
-                else
-                    --(Speed Crash) If Mario's speed is more than 2^17.
-                    if (val14 < 0x1000) then
-                        val14 = 0x1000
-                    else
-                        val14 = (val04 / 4.0 * 0x10000)
-                    end
-                    set_mario_animation(m, MARIO_ANIM_START_TIPTOE)
-                    play_step_sound(m, 7, 22)
-                    if (is_anim_past_frame(m, 23)) then
-                        m.actionTimer = 2
-                    end
-
-                    val0C = false
-                end
-            elseif m.actionTimer == 1 then
-                if (val04 > 8.0) or m.intendedMag > 8.0 then
-                    m.actionTimer = 2
-                else
-                    -- (Speed Crash) If Mario's speed is more than 2^17.
-                    if (val14 < 0x1000) then
-                        val14 = 0x1000
-                    else
-                        val14 = (val04 / 4.0 * 0x10000)
-                    end
-                    set_mario_animation(m, MARIO_ANIM_TIPTOE)
-                    play_step_sound(m, 14, 72)
-
-                    val0C = false
-                end
-            elseif m.actionTimer == 2 then
-                if (val04 < 5.0) then
-                    m.actionTimer = 1
-                elseif (val04 > 22.0) then
-                    m.actionTimer = 3
-                else
-                    -- (Speed Crash) If Mario's speed is more than 2^17.
-                    val14 = (val04 / 4.0 * 0x10000)
-                    set_mario_anim_with_accel(m, MARIO_ANIM_WALKING, val14)
-                    play_step_sound(m, 10, 49)
-
-                    val0C = false
-                end
-            elseif m.actionTimer == 3 then
-                if (val04 < 18.0) then
-                    m.actionTimer = 2
-                else
-                    -- (Speed Crash) If Mario's speed is more than 2^17.
-                    val14 = (val04 / 4.0 * 0x10000)
-                    if m.forwardVel > 40 then
-                        smlua_anim_util_set_animation(marioObj, "SONIC_RUNNING")
-                        set_mario_anim_with_accel(m, MARIO_ANIM_RUNNING_UNUSED, val14)
-                    else
-                        set_mario_anim_with_accel(m, MARIO_ANIM_RUNNING, val14)
-                    end
-                    play_step_sound(m, 9, 45)
-                    targetPitch = tilt_body_running(m)
-
-                    val0C = false
-                end
-            end
-        end
-    end
-
-    marioObj.oMarioWalkingPitch = convert_s16(approach_s32(marioObj.oMarioWalkingPitch, find_floor_slope(m, 0x8000), 0x800, 0x800))
-    marioObj.header.gfx.angle.x = marioObj.oMarioWalkingPitch
-end
 
 -- Action functions
 
@@ -415,6 +320,18 @@ function act_airdash(m)
 
     e.airdashed = 1
 
+    local stepResult = perform_air_step(m, 0)
+
+    if stepResult == AIR_STEP_HIT_WALL then
+        mario_set_forward_vel(m, -16.0)
+        m.vel.y = 40
+
+        m.particleFlags = m.particleFlags | PARTICLE_VERTICAL_STAR
+        set_mario_action(m, ACT_BACKWARD_AIR_KB, 0)
+    elseif stepResult == AIR_STEP_LANDED then
+        m.action = ACT_SONIC_WALKING
+    end
+
     if m.actionTimer > 10 then
         if (m.flags & MARIO_WING_CAP) ~= 0 then
             return set_mario_action(m, ACT_FLYING, 1)
@@ -442,17 +359,6 @@ function act_airdash(m)
         m.particleFlags = m.particleFlags | PARTICLE_SPARKLES
     end
 
-    stepResult = perform_air_step(m, 0)
-
-    if stepResult == AIR_STEP_HIT_WALL then
-        mario_set_forward_vel(m, -16.0)
-        m.vel.y = 40
-
-        m.particleFlags = m.particleFlags | PARTICLE_VERTICAL_STAR
-        set_mario_action(m, ACT_BACKWARD_AIR_KB, 0)
-    elseif stepResult == AIR_STEP_LANDED then
-        return set_mario_action(m, ACT_WALKING, 0)
-    end
     m.actionTimer = m.actionTimer + 1
     return 0
 end
@@ -473,7 +379,7 @@ function act_sonic_walking(m)
             set_mario_anim_with_accel(m, MARIO_ANIM_WALK_WITH_LIGHT_OBJ, m.forwardVel * 0x4000)
             play_step_sound(m, 12, 62)
         else
-            sonic_anim_and_audio_for_walk(m)
+            sonic_gen_anim_and_audio_for_walk(m, 20, 48)
         end
         if (m.intendedMag - m.forwardVel) > 16 then
             set_mario_particle_flags(m, PARTICLE_DUST, false)
@@ -858,6 +764,75 @@ function act_sonic_eagle(m)
     return 0
 end
 
+function act_sonic_windmill_kick(m)
+    local e = gMarioStateExtras[m.playerIndex]
+    if m.actionTimer == 0 then
+        play_character_sound_if_no_flag(m, CHAR_SOUND_PUNCH_HOO, MARIO_ACTION_SOUND_PLAYED)
+        e.rotAngle = m.faceAngle.y
+    end
+    
+    m.marioBodyState.eyeState = MARIO_EYES_LOOK_RIGHT
+    
+    if (m.input & INPUT_Z_PRESSED) ~= 0 then
+        return set_mario_action(m, ACT_GROUND_POUND, 0)
+    end
+    
+    if (m.input & INPUT_NONZERO_ANALOG) ~= 0 then
+        mario_set_forward_vel(m, math.abs(m.forwardVel))
+    end
+    
+    if math.abs(m.forwardVel) >= 10 then
+        m.faceAngle.y = m.intendedYaw - approach_s32(convert_s16(m.intendedYaw - m.faceAngle.y), 0, 0x600, 0x600)
+    else
+        m.faceAngle.y = m.intendedYaw
+    end
+        
+    if m.faceAngle.y ~= m.intendedYaw and m.forwardVel > 32 then
+        mario_set_forward_vel(m, approach_f32(m.forwardVel, 0, m.forwardVel/16, m.forwardVel/16))
+    else
+        mario_set_forward_vel(m, m.forwardVel)
+    end
+
+    local stepResult = perform_air_step(m, 0)
+    sonic_update_air(m)
+
+    set_mario_animation(m, MARIO_ANIM_SLIDE_KICK)
+    smlua_anim_util_set_animation(m.marioObj, "SONIC_WINDMILL_KICK")
+    
+    if stepResult == AIR_STEP_HIT_WALL and m.wall ~= nil then
+        m.particleFlags = m.particleFlags | PARTICLE_VERTICAL_STAR
+        play_sound(SOUND_ACTION_BOUNCE_OFF_OBJECT, m.marioObj.header.gfx.cameraToObject)
+        cur_obj_shake_screen(SHAKE_POS_SMALL)
+        wall_bounce(m)
+        if m.forwardVel < 5 then
+            mario_set_forward_vel(m, 5)
+        else
+            mario_set_forward_vel(m, math.abs(m.forwardVel))
+        end
+    elseif stepResult == AIR_STEP_LANDED then
+        if m.vel.x ~= 0 or m.vel.z ~= 0 then
+            m.faceAngle.y = atan2s(m.vel.z, m.vel.x)
+        end
+        if (check_fall_damage_or_get_stuck(m, ACT_HARD_BACKWARD_GROUND_KB) == 0) then
+            if m.forwardVel ~= 0 then
+                set_mario_action(m, e.walkAction, 0)
+            else
+                set_mario_action(m, ACT_FREEFALL_LAND, 0)
+            end
+        end
+    end
+    
+    e.rotAngle = e.rotAngle + 0x3000
+    m.marioObj.header.gfx.angle.y = e.rotAngle
+    if (e.rotAngle) % 0x7 == 0 then
+        play_sound(SOUND_ACTION_TWIRL, m.marioObj.header.gfx.cameraToObject)
+    end
+    --m.flags = m.flags | MARIO_KICKING
+    
+    m.actionTimer = m.actionTimer + 1
+    return 0
+end
+
 -- Hooks.
 
 function sonic_on_set_action(m)
@@ -874,6 +849,15 @@ function sonic_on_set_action(m)
 
     if m.action == ACT_HOLD_WALKING then
         m.action = e.walkAction
+    end
+
+    if m.action == ACT_SLIDE_KICK then
+        set_mario_action(m, ACT_SONIC_WINDMILL_KICK, 0)
+    end
+
+    if m.action == ACT_SONIC_WINDMILL_KICK then
+        m.vel.y = 25
+        if m.forwardVel < 50 then mario_set_forward_vel(m, 50) end
     end
 
     if m.action == ACT_DIVE then
@@ -1013,6 +997,10 @@ function sonic_update(m)
         smlua_anim_util_set_animation(m.marioObj, "SONIC_SKID_TURN")
     end
 
+    if m.marioObj.header.gfx.animInfo.animID == MARIO_ANIM_RUNNING_UNUSED then
+        smlua_anim_util_set_animation(m.marioObj, "SONIC_RUNNING")
+    end
+
     if m.marioObj.header.gfx.animInfo.animID == MARIO_ANIM_DROWNING_PART1 then
         m.marioBodyState.eyeState = 14
     elseif m.marioObj.header.gfx.animInfo.animID == MARIO_ANIM_DROWNING_PART2 then
@@ -1032,7 +1020,7 @@ function sonic_update(m)
     end
 
     if airBonkActions[m.action] then
-        m.marioBodyState.eyeState = 10
+        m.marioBodyState.eyeState = 14
     end
 
     if
@@ -1101,7 +1089,8 @@ function sonic_update(m)
         m.marioObj.header.gfx.scale.x = 0.7
         return set_mario_action(m, ACT_SONIC_WATER_FALLING, 2)
     end
-    
+
+    anti_faster_swimming(m)
     visual_updates(m)
     return 0
 end
@@ -1113,6 +1102,7 @@ hook_mario_action(ACT_SONIC_HOLD_JUMP, act_sonic_hold_jump)
 hook_mario_action(ACT_SONIC_IDLE, act_sonic_idle)
 hook_mario_action(ACT_SONIC_LYING_DOWN, act_sonic_lying_down)
 hook_mario_action(ACT_SONIC_EAGLE, act_sonic_eagle)
+hook_mario_action(ACT_SONIC_WINDMILL_KICK, act_sonic_windmill_kick, INT_FAST_ATTACK_OR_SHELL)
 hook_mario_action(ACT_SONIC_FREEFALL, act_sonic_freefall)
 hook_mario_action(ACT_DROPDASH, act_dropdash, INT_FAST_ATTACK_OR_SHELL)
 hook_mario_action(ACT_AIRDASH, act_airdash, INT_FAST_ATTACK_OR_SHELL)

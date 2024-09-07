@@ -1,10 +1,11 @@
--- name: Sonic Character: \\#4084d9\\Rebooted\\#ffffff\\ \\#fd90a7\\v1.2\\#ffffff\\
+-- name: Sonic Character: \\#4084d9\\Rebooted \\#fd90a7\\v1.2\\#ffffff\\
 -- incompatible:
--- description: The Sonic character mod remade with a couple of improvement in controls, as well as new characters.\n\ \n\Credits:\n\Coding and modelling: \\#acfffc\\steven.\\#ffffff\\\n\Ball model: \\#5454a7\\king the memer\\#ffffff\\\n\Sonic VA: \\#ff5c26\\Yuyake Kasarion\\#ffffff\\\n\Amy VA: Grimoria Webb\\#ffffff\\\n\Voice system: \\#ff6b91\\SMS Alfredo \\#ffffff\\\n\Coolest playtesters: \\#016786\\Asra\\#ffffff\\, \\#99fe02\\MlopsFunny\\#ffffff\\, \\#6a9ac3\\Cooliokid 956\\#ffffff\\, \\#171b73\\Demnyx\\#4b1c75\\Onyxfur\\#ffffff\\, \\#9856ac\\Zerks\\#ffffff\\.
+-- description: The Sonic character mod remade with a couple of improvement in controls, as well as new characters.\n\ \n\Credits:\n\Coding and modelling: \\#acfffc\\steven.\\#ffffff\\\n\Ball model: \\#5454a7\\king the memer\\#ffffff\\\n\Sonic VA: \\#ff5c26\\Yuyake Kasarion\\#ffffff\\\n\Amy VA: Grimoria Webb\n\Voice system: \\#ff6b91\\SMS Alfredo \\#ffffff\\\n\Coolest playtesters: \\#016786\\Asra\\#ffffff\\, \\#99fe02\\MlopsFunny\\#ffffff\\, \\#6a9ac3\\Cooliokid 956\\#ffffff\\, \\#171b73\\Demnyx\\#4b1c75\\Onyxfur\\#ffffff\\, \\#9856ac\\Zerks\\#ffffff\\.
 
 E_MODEL_SONIC = smlua_model_util_get_id("sonic_geo")
 E_MODEL_AMY_ROSE = smlua_model_util_get_id("amy_rose_geo")
 E_MODEL_AMY_ROSE_WINTER = smlua_model_util_get_id("amy_rose_winter_geo")
+E_MODEL_KNUCKLES = smlua_model_util_get_id("knuckles_geo")
 E_MODEL_SPINBALL = smlua_model_util_get_id("spinball_geo")
 
 SOUND_SONIC_JUMP = audio_sample_load("SA1-Jump.mp3")
@@ -248,6 +249,102 @@ function convert_s16(num)
         num = min + (num - max)
     end
     return num
+end
+
+function sonic_gen_anim_and_audio_for_walk(m, walkCap, runCap)
+
+    local val14 = 0
+    local marioObj = m.marioObj
+    local val0C = true
+    local targetPitch = 0
+    local val04 = 4.0
+
+    if val14 < 4 then
+        val14 = 4
+    end
+
+    if m.forwardVel > 2 then
+        val04 = math.abs(m.forwardVel)
+    else
+        val04 = 5
+    end
+
+    if (m.quicksandDepth > 50.0) then
+        val14 = (val04 / 4.0 * 0x10000)
+        set_mario_anim_with_accel(m, MARIO_ANIM_MOVE_IN_QUICKSAND, val14)
+        play_step_sound(m, 19, 93)
+        m.actionTimer = 0
+    else
+        if val0C == true then
+            if m.actionTimer == 0 then
+                if (val04 > 8.0) then
+                    m.actionTimer = 2
+                else
+                    --(Speed Crash) If Mario's speed is more than 2^17.
+                    if (val14 < 0x1000) then
+                        val14 = 0x1000
+                    else
+                        val14 = (val04 / 4.0 * 0x10000)
+                    end
+                    set_mario_animation(m, MARIO_ANIM_START_TIPTOE)
+                    play_step_sound(m, 7, 22)
+                    if (is_anim_past_frame(m, 23)) then
+                        m.actionTimer = 2
+                    end
+
+                    val0C = false
+                end
+            elseif m.actionTimer == 1 then
+                if (val04 > 8.0) or m.intendedMag > 8.0 then
+                    m.actionTimer = 2
+                else
+                    -- (Speed Crash) If Mario's speed is more than 2^17.
+                    if (val14 < 0x1000) then
+                        val14 = 0x1000
+                    else
+                        val14 = (val04 / 4.0 * 0x10000)
+                    end
+                    set_mario_animation(m, MARIO_ANIM_TIPTOE)
+                    play_step_sound(m, 14, 72)
+
+                    val0C = false
+                end
+            elseif m.actionTimer == 2 then
+                if (val04 < 5.0) then
+                    m.actionTimer = 1
+                elseif (val04 > walkCap) then
+                    m.actionTimer = 3
+                else
+                    -- (Speed Crash) If Mario's speed is more than 2^17.
+                    val14 = (val04 / 4.0 * 0x10000)
+                    set_mario_anim_with_accel(m, MARIO_ANIM_WALKING, val14)
+                    play_step_sound(m, 10, 49)
+
+                    val0C = false
+                end
+            elseif m.actionTimer == 3 then
+                if (val04 <= walkCap) then
+                    m.actionTimer = 2
+                else
+                    -- (Speed Crash) If Mario's speed is more than 2^17.
+                    val14 = (val04 / 4.0 * 0x10000)
+                    if m.forwardVel > runCap then
+                        set_mario_anim_with_accel(m, MARIO_ANIM_RUNNING_UNUSED, val14)
+                    else
+                        set_mario_anim_with_accel(m, MARIO_ANIM_RUNNING, val14)
+                    end
+                    play_step_sound(m, 9, 45)
+                    targetPitch = tilt_body_running(m)
+
+                    val0C = false
+                end
+            end
+        end
+    end
+
+    --marioObj.oMarioWalkingPitch = convert_s16(approach_s32(marioObj.oMarioWalkingPitch, find_floor_slope(m, 0x8000), 0x800, 0x800))
+    --marioObj.header.gfx.angle.x = marioObj.oMarioWalkingPitch
+    align_with_floor(m)
 end
 
 function update_sonic_walking_speed(m)
@@ -747,6 +844,29 @@ function spawn_spindust(m)
     return 0
 end
 
+-- Code nabbed from Shell Rush.
+function wall_bounce(m)
+    -- figure out direction
+    local v = {
+        x = sins(m.faceAngle.y) * m.forwardVel,
+        y = 0,
+        z = coss(m.faceAngle.y) * m.forwardVel
+    }
+
+    -- projection
+    local parallel = vec3f_project(v, m.wallNormal)
+    local perpendicular = {x = v.x - parallel.x, y = v.y - parallel.y, z = v.z - parallel.z}
+
+    -- reflect velocity along normal
+    local reflect = {
+        x = perpendicular.x - parallel.x,
+        y = perpendicular.y - parallel.y,
+        z = perpendicular.z - parallel.z
+    }
+
+    m.faceAngle.y = atan2s(reflect.z, reflect.x)
+end
+
 -- Hitting wall patched up to fix bonking.
 function act_air_hit_wall(m)
 
@@ -790,6 +910,26 @@ end
 
 local prevVelY
 local prevPosY
+
+function anti_faster_swimming(m)
+    for mod in pairs(gActiveMods) do
+        if gActiveMods[mod].name == "Faster Swimming" then
+            local hScale = 1.0
+            local vScale = 1.0
+
+            if (m.action & ACT_FLAG_SWIMMING) ~= 0 then
+                hScale = hScale / 2.0
+                if m.action ~= ACT_WATER_PLUNGE then
+                    vScale = vScale / 2.0
+                end
+            end
+
+            m.vel.x = m.vel.x * hScale
+            m.vel.y = m.vel.y * vScale
+            m.vel.z = m.vel.z * hScale
+        end
+    end
+end
 
 -- Hooks.
 function mario_update(m)
@@ -945,6 +1085,13 @@ function on_interact(m, o, intType)
         o.oInteractStatus = ATTACK_KICK_OR_TRIP + (INT_STATUS_INTERACTED | INT_STATUS_WAS_ATTACKED)
         play_sound(SOUND_ACTION_HIT, m.marioObj.header.gfx.cameraToObject)
         return false
+    end
+
+    if m.action == ACT_SONIC_WINDMILL_KICK
+    and (intType & damagableTypes) ~= 0 then
+        o.oInteractStatus = ATTACK_KICK_OR_TRIP + (INT_STATUS_INTERACTED | INT_STATUS_WAS_ATTACKED)
+        play_sound(SOUND_ACTION_HIT, m.marioObj.header.gfx.cameraToObject)
+        m.particleFlags = m.particleFlags | 0x00040000
     end
 
     if (intType & bounceTypes) ~= 0 and (o.oInteractionSubtype & INT_SUBTYPE_TWIRL_BOUNCE) == 0 and m.action == ACT_BOUND_POUND then

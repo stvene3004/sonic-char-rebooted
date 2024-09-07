@@ -212,7 +212,7 @@ function act_sonic_water_walking(m)
         if m.heldObj ~= nil then
             anim_and_audio_for_hold_walk(m)
         else
-            sonic_anim_and_audio_for_walk(m)
+            sonic_gen_anim_and_audio_for_walk(m, 20, 48)
         end
         mario_set_forward_vel(m, m.forwardVel)
     elseif stepResult == GROUND_STEP_HIT_WALL then

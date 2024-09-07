@@ -83,12 +83,12 @@ local function custom_character_sound(m, characterSound)
     if characterSound == CHAR_SOUND_HAHA and m.hurtCounter > 0 then return 0 end
 
     local voice = SONIC_VOICETABLE[characterSound]
-    
-    if current_sonic_char(m) == 1 then
-        voice = SONIC_VOICETABLE[characterSound]
-    elseif current_sonic_char(m) == 2 then
-        voice = AMY_VOICETABLE[characterSound]
-    end
+	
+	if current_sonic_char(m) == 1 then
+		voice = SONIC_VOICETABLE[characterSound]
+	elseif current_sonic_char(m) == 2 then
+		voice = AMY_VOICETABLE[characterSound]
+	end
 
     if voice ~= nil then
         return play_custom_character_sound(m, voice)
@@ -108,13 +108,13 @@ local SLEEP_TALK_END = SLEEP_TALK_START + SLEEP_TALK_SNORES
 --- @param m MarioState
 local function custom_character_snore(m)
     if not use_custom_voice(m) then return end
-    
-    
-    if current_sonic_char(m) == 1 then
-        SNORE3_TABLE = SONIC_VOICETABLE[CHAR_SOUND_SNORING3]
-    elseif current_sonic_char(m) == 2 then
-        SNORE3_TABLE = AMY_VOICETABLE[CHAR_SOUND_SNORING3]
-    end
+	
+	
+	if current_sonic_char(m) == 1 then
+		SNORE3_TABLE = SONIC_VOICETABLE[CHAR_SOUND_SNORING3]
+	elseif current_sonic_char(m) == 2 then
+		SNORE3_TABLE = AMY_VOICETABLE[CHAR_SOUND_SNORING3]
+	end
 
     --Stop the snoring!
     if m.action ~= ACT_SLEEPING then

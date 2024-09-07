@@ -1,0 +1,2 @@
+-- This file serves no purpose.
+-- It's just a quick way to remove a changed file t' prevent bugs from combinin' it with the older versions that had this file.
