@@ -455,6 +455,8 @@ function act_amy_hammer_hit(m)
         set_mario_action(m, ACT_WALKING, 0)
     end
 
+    if m.forwardVel < -16 then mario_set_forward_vel(m, -16) end
+
     set_mario_animation(m, MARIO_ANIM_FIRST_PUNCH_FAST)
     if m.actionArg == 0 then
         smlua_anim_util_set_animation(m.marioObj, "AMY_HAMMER_HIT_END")
@@ -504,6 +506,8 @@ function act_amy_hammer_attack(m)
             return true
         end
     end
+
+    if m.forwardVel < -16 then mario_set_forward_vel(m, -16) end
 
     amy_spawn_heart_particles(m, m.faceAngle.y, 120, e.rotAngle, true)
 
@@ -1031,6 +1035,7 @@ function act_amy_hammer_pound(m)
     end
 
     local stepResult = perform_air_step(m, 0)
+    sonic_update_air(m)
 
     if stepResult == AIR_STEP_LANDED then
         m.particleFlags = m.particleFlags | PARTICLE_MIST_CIRCLE | PARTICLE_HORIZONTAL_STAR
@@ -1165,6 +1170,10 @@ function amy_update(m)
 
     if m.action == ACT_SOFT_BONK then
         m.actionTimer = m.actionTimer + 1
+    end
+
+    if m.action == ACT_TURNING_AROUND then
+        apply_slope_decel(m, 3)
     end
 
     if (m.action == ACT_WATER_IDLE 

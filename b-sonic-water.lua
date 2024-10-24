@@ -251,10 +251,7 @@ function act_water_roll(m)
         end
         m.faceAngle.y = m.intendedYaw - approach_s32(convert_s16(m.intendedYaw - m.faceAngle.y), 0, 0x1000, 0x1000)
     elseif stepResult == GROUND_STEP_HIT_WALL then
-        mario_set_forward_vel(m, -16.0)
-
-        m.particleFlags = m.particleFlags | PARTICLE_VERTICAL_STAR
-        return set_mario_action(m, ACT_GROUND_BONK, 0)
+        return set_mario_action(m, ACT_SONIC_WATER_STANDING, 0)
     elseif stepResult == GROUND_STEP_LEFT_GROUND then
         m.vel.y = 0
         set_mario_action(m, ACT_SONIC_WATER_FALLING, 2)

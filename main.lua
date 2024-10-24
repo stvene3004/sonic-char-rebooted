@@ -343,8 +343,8 @@ function sonic_gen_anim_and_audio_for_walk(m, walkCap, runCap)
     end
 
     --marioObj.oMarioWalkingPitch = convert_s16(approach_s32(marioObj.oMarioWalkingPitch, find_floor_slope(m, 0x8000), 0x800, 0x800))
-    --marioObj.header.gfx.angle.x = marioObj.oMarioWalkingPitch
-    align_with_floor(m)
+    marioObj.header.gfx.angle.x = find_floor_slope(m, 0x8000)
+    marioObj.header.gfx.angle.z = find_floor_slope(m, 0x4000)
 end
 
 function update_sonic_walking_speed(m)
@@ -436,6 +436,11 @@ function sonic_common_air_action_step(m, landAction, animation, stepArg, turning
             m.faceAngle.y = m.intendedYaw - approach_s32(convert_s16(m.intendedYaw - m.faceAngle.y), 0, 0x1000, 0x1000)
         else
             m.faceAngle.y = m.intendedYaw
+        end
+
+        if m.forwardVel < 0 and analog_stick_held_back(m) ~= 0 then
+            m.faceAngle.y = atan2s(m.vel.z, m.vel.x)
+            mario_set_forward_vel(m, math.abs(m.forwardVel))
         end
         
         if m.faceAngle.y ~= m.intendedYaw and m.forwardVel > 32 then
@@ -809,6 +814,18 @@ function visual_updates(m)
     end
 end
 
+-- Shitty slope jump.
+-- Will figure out what t' do with it later.
+function set_sonic_y_vel_based_on_fspeed(m, initialVelY, multiplier)
+	m.forwardVel = m.forwardVel + initialVelY * sins(find_floor_slope(m, m.faceAngle.y))
+    m.vel.x = m.vel.x + m.forwardVel * sins(m.floorAngle)
+    m.vel.z = m.vel.z + m.forwardVel * coss(m.floorAngle)
+
+
+    m.vel.y = m.vel.y + (initialVelY * coss(find_floor_slope(m, m.faceAngle.y)) + m.forwardVel * multiplier)
+	
+end
+
 function do_sonic_jump(m)
     local e = gMarioStateExtras[m.playerIndex]
     set_mario_y_vel_based_on_fspeed(m, e.jumpHeight, e.jumpHeightMultiplier)
@@ -867,6 +884,54 @@ function wall_bounce(m)
     m.faceAngle.y = atan2s(reflect.z, reflect.x)
 end
 
+-- Literally just apply_slope_accel but with different values.
+function sonic_apply_slope_accel(m)
+    local slopeAccel
+
+    local floor = m.floor
+    if (floor == nil) then return end
+    local steepness = math.sqrt(floor.normal.x * floor.normal.x + floor.normal.z * floor.normal.z)
+
+    local normalY = floor.normal.y
+    local floorDYaw = m.floorAngle - m.faceAngle.y
+
+    if (mario_floor_is_slope(m) ~= 0) then
+        local slopeClass = 0
+
+        if (m.action ~= ACT_SOFT_BACKWARD_GROUND_KB and m.action ~= ACT_SOFT_FORWARD_GROUND_KB) then
+            slopeClass = mario_get_floor_class(m)
+        end
+
+        if slopeClass == SURFACE_CLASS_VERY_SLIPPERY then
+            slopeAccel = 5.5
+        elseif slopeClass == SURFACE_CLASS_SLIPPERY then
+            slopeAccel = 5
+        elseif slopeClass == SURFACE_CLASS_DEFAULT then
+            slopeAccel = 4.5
+        elseif slopeClass == SURFACE_CLASS_NOT_SLIPPERY then
+            slopeAccel = 4
+        end
+
+        if (floorDYaw > -0x4000 and floorDYaw < 0x4000) then
+            m.forwardVel = m.forwardVel + slopeAccel * steepness
+        else
+            m.forwardVel = m.forwardVel - slopeAccel * steepness
+        end
+    end
+
+    m.slideYaw = m.faceAngle.y
+
+    m.slideVelX = m.forwardVel * sins(m.faceAngle.y)
+    m.slideVelZ = m.forwardVel * coss(m.faceAngle.y)
+
+    m.vel.x = m.slideVelX
+    m.vel.y = 0.0
+    m.vel.z = m.slideVelZ
+
+    mario_update_moving_sand(m)
+    mario_update_windy_ground(m)
+end
+
 -- Hitting wall patched up to fix bonking.
 function act_air_hit_wall(m)
 
@@ -907,9 +972,6 @@ function act_air_hit_wall(m)
     m.actionTimer = m.actionTimer + 1
     return 0
 end
-
-local prevVelY
-local prevPosY
 
 function anti_faster_swimming(m)
     for mod in pairs(gActiveMods) do
@@ -973,6 +1035,14 @@ function mario_update(m)
         end
     end
 
+    -- For Badnik Bounce.
+    if (m.action & ACT_FLAG_AIR) ~= 0 and m.action ~= ACT_GROUND_POUND then
+        
+        if m.vel.y >= 0 then
+            prevHeight = m.pos.y
+        end
+    end
+
     -- 9: smug
     -- 10: shocked
     -- 11: squinted eyes
@@ -995,7 +1065,15 @@ function mario_on_set_action(m)
     end
 end
 
+local bounceTypes = {
+    [INTERACT_BOUNCE_TOP] = 1,
+    [INTERACT_BOUNCE_TOP2] = 1,
+    [INTERACT_KOOPA] = 1
+}
+
 function allow_interact(m, o, intType)
+    local e = gMarioStateExtras[m.playerIndex]
+
     -- Properly grab stuff. (Bit taken from Sharen's Pasta Castle)
     local grabActions = {
         [ACT_SPINDASH] = true,
@@ -1065,14 +1143,13 @@ function allow_interact(m, o, intType)
         
         return false
     end
-    
 end
 
 function on_interact(m, o, intType)
+    local e = gMarioStateExtras[m.playerIndex]
+
     local damagableTypes = (INTERACT_BOUNCE_TOP | INTERACT_BOUNCE_TOP2 | INTERACT_HIT_FROM_BELOW | 2097152 | INTERACT_KOOPA | 
     INTERACT_BREAKABLE | INTERACT_GRABBABLE | INTERACT_BULLY)
-
-    local bounceTypes = (INTERACT_BOUNCE_TOP | INTERACT_BOUNCE_TOP2 | INTERACT_KOOPA)
     
     -- damage stuff if running
     -- Unimplemented slide boost mode.
@@ -1094,11 +1171,13 @@ function on_interact(m, o, intType)
         m.particleFlags = m.particleFlags | 0x00040000
     end
 
-    if (intType & bounceTypes) ~= 0 and (o.oInteractionSubtype & INT_SUBTYPE_TWIRL_BOUNCE) == 0 and m.action == ACT_BOUND_POUND then
-        o.oInteractStatus = ATTACK_GROUND_POUND_OR_TWIRL + (INT_STATUS_INTERACTED | INT_STATUS_WAS_ATTACKED)
-        return set_mario_action(m, ACT_BOUND_JUMP, 0)
-    end
 end 
+
+function allow_pvp_attack(a, v)
+    if a.action == ACT_SONIC_JUMP then
+        return false
+    end
+end
 
 function set_mario_model(o)
     if obj_has_behavior_id(o, id_bhvMario) ~= 0 then
@@ -1117,5 +1196,6 @@ hook_event(HOOK_MARIO_UPDATE, mario_update)
 hook_event(HOOK_ALLOW_INTERACT, allow_interact)
 hook_event(HOOK_ON_INTERACT, on_interact)
 hook_event(HOOK_OBJECT_SET_MODEL, set_mario_model)
+hook_event(HOOK_ALLOW_PVP_ATTACK, allow_pvp_attack)
 
 hook_mario_action(ACT_SONIC_AIR_HIT_WALL, act_air_hit_wall)

@@ -149,7 +149,7 @@ function act_sonic_roll(m)
     local stepResult = perform_ground_step(m)
     if stepResult == GROUND_STEP_NONE then
         if mario_floor_is_slope(m) ~= 0 or mario_floor_is_steep(m) ~= 0 then
-            apply_slope_accel(m)
+            sonic_apply_slope_accel(m)
         else
             mario_set_forward_vel(m, approach_f32(m.forwardVel, 0, 1, 1))
         end
@@ -161,10 +161,14 @@ function act_sonic_roll(m)
 
         m.faceAngle.y = m.intendedYaw - approach_s32(convert_s16(m.intendedYaw - m.faceAngle.y), 0, 0x1000, 0x1000)
     elseif stepResult == GROUND_STEP_HIT_WALL then
-        mario_set_forward_vel(m, -16.0)
+        if m.forwardVel > 70 then
+            mario_set_forward_vel(m, -16.0)
 
-        m.particleFlags = m.particleFlags | PARTICLE_VERTICAL_STAR
-        return set_mario_action(m, ACT_GROUND_BONK, 0)
+            m.particleFlags = m.particleFlags | PARTICLE_VERTICAL_STAR
+            return set_mario_action(m, ACT_GROUND_BONK, 0)
+        else
+            return set_mario_action(m, ACT_SONIC_IDLE, 0)
+        end
     elseif stepResult == GROUND_STEP_LEFT_GROUND then
         set_mario_action(m, ACT_SONIC_JUMP, 0)
     end
@@ -329,7 +333,7 @@ function act_airdash(m)
         m.particleFlags = m.particleFlags | PARTICLE_VERTICAL_STAR
         set_mario_action(m, ACT_BACKWARD_AIR_KB, 0)
     elseif stepResult == AIR_STEP_LANDED then
-        m.action = ACT_SONIC_WALKING
+        set_mario_action(m, ACT_SONIC_WALKING, 0)
     end
 
     if m.actionTimer > 10 then
@@ -488,6 +492,8 @@ function act_bound_pound(m)
     e.animFrame = e.animFrame + 2
 
     local stepResult = perform_air_step(m, 0)
+
+    sonic_update_air(m)
 
     if stepResult == AIR_STEP_LANDED then
         m.particleFlags = m.particleFlags | PARTICLE_MIST_CIRCLE | PARTICLE_HORIZONTAL_STAR
@@ -740,6 +746,11 @@ function act_sonic_eagle(m)
     sonic_update_air(m)
     m.faceAngle.y = m.intendedYaw - approach_s32(convert_s16(m.intendedYaw - m.faceAngle.y), 0, 0x1000, 0x1000)
 
+	if m.forwardVel < 0 and analog_stick_held_back(m) ~= 0 then
+        m.faceAngle.y = atan2s(m.vel.z, m.vel.x)
+        mario_set_forward_vel(m, math.abs(m.forwardVel))
+    end
+
     if m.faceAngle.y ~= m.intendedYaw and m.forwardVel > 32 then
         mario_set_forward_vel(m, approach_f32(m.forwardVel, 0, m.forwardVel/16, m.forwardVel/16))
     else
@@ -950,6 +961,10 @@ function sonic_update(m)
 
     if m.action == ACT_SOFT_BONK then
         m.actionTimer = m.actionTimer + 1
+    end
+
+    if m.action == ACT_TURNING_AROUND then
+        apply_slope_decel(m, 6)
     end
     
     if m.action ~= ACT_GROUND_POUND_LAND then
