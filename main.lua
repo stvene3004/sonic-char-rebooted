@@ -251,6 +251,13 @@ function convert_s16(num)
     return num
 end
 
+-- mfw align_with_floor(m) aligns with walls
+function align_with_floor_but_better(m)
+    if m.floor == nil then return end
+    m.marioObj.header.gfx.angle.x = find_floor_slope(m, 0x8000)
+    m.marioObj.header.gfx.angle.z = find_floor_slope(m, 0x4000)
+end
+
 function sonic_gen_anim_and_audio_for_walk(m, walkCap, runCap)
 
     local val14 = 0
@@ -343,8 +350,7 @@ function sonic_gen_anim_and_audio_for_walk(m, walkCap, runCap)
     end
 
     --marioObj.oMarioWalkingPitch = convert_s16(approach_s32(marioObj.oMarioWalkingPitch, find_floor_slope(m, 0x8000), 0x800, 0x800))
-    marioObj.header.gfx.angle.x = find_floor_slope(m, 0x8000)
-    marioObj.header.gfx.angle.z = find_floor_slope(m, 0x4000)
+    align_with_floor_but_better(m)
 end
 
 function update_sonic_walking_speed(m)
@@ -404,7 +410,7 @@ function sonic_update_air(m)
             end
             sidewaysSpeed = intendedMag * sins(intendedDYaw) * dragThreshold
         else
-            m.forwardVel = approach_f32(m.forwardVel, 0.0, 1, 1)
+            m.forwardVel = approach_f32(m.forwardVel, 0.0, 4, 4)
         end
 
         --! Uncapped air speed. Net positive when moving forward.
@@ -459,6 +465,7 @@ function sonic_common_air_action_step(m, landAction, animation, stepArg, turning
     elseif stepResult == AIR_STEP_LANDED then
         if m.vel.x ~= 0 or m.vel.z ~= 0 then
             m.faceAngle.y = atan2s(m.vel.z, m.vel.x)
+            mario_set_forward_vel(m, math.sqrt(m.vel.z ^ 2 + m.vel.x ^ 2))
         end
         if (check_fall_damage_or_get_stuck(m, ACT_HARD_BACKWARD_GROUND_KB) == 0) then
             if m.forwardVel ~= 0 and keepMomentum then

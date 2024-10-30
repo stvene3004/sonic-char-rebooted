@@ -181,6 +181,7 @@ function act_sonic_roll(m)
         e.rotAngle = e.rotAngle - 0x9000
     end
     set_anim_to_frame(m, 10 * e.rotAngle / 0x9000)
+    align_with_floor_but_better(m)
 
     m.actionTimer = m.actionTimer + 1
 
